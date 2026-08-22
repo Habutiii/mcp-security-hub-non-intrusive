@@ -56,9 +56,6 @@ MCPs run in isolated Docker containers. To give them access to files:
 | yara | YARA rules | `/app/rules` | Custom rules |
 | capa | Binaries | `/app/samples` | Capability detection |
 | radare2 | Binaries | `/samples` | Reverse engineering |
-| trivy | Code/images | `/app/target` | Vulnerability scanning |
-| semgrep | Source code | `/app/target` | Static analysis |
-| prowler | AWS creds | `/home/mcpuser/.aws` | Cloud auditing |
 
 ## Special Permissions
 
@@ -68,7 +65,6 @@ Some MCPs require additional Docker capabilities:
 |-----|------------|--------|
 | nmap | `--cap-add=NET_RAW` | Raw socket access for SYN scans |
 | masscan | `--cap-add=NET_RAW` | Raw socket access for port scanning |
-| trivy | Docker socket mount | Scan Docker images |
 
 ## Environment Variables
 

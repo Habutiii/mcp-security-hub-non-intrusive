@@ -195,16 +195,12 @@ def generate_site():
         'Reconnaissance': {'icon': 'bi-search', 'color': '#3498db'},
         'Web Security': {'icon': 'bi-globe', 'color': '#e74c3c'},
         'Binary Analysis': {'icon': 'bi-file-binary', 'color': '#9b59b6'},
-        'Blockchain Security': {'icon': 'bi-currency-bitcoin', 'color': '#f7931a'},
-        'Cloud Security': {'icon': 'bi-cloud', 'color': '#1abc9c'},
         'Secrets Detection': {'icon': 'bi-key', 'color': '#f39c12'},
-        'Exploitation': {'icon': 'bi-bug', 'color': '#c0392b'},
         'Fuzzing': {'icon': 'bi-shuffle', 'color': '#e67e22'},
         'OSINT': {'icon': 'bi-person-badge', 'color': '#2980b9'},
         'Threat Intelligence': {'icon': 'bi-shield-exclamation', 'color': '#8e44ad'},
         'Active Directory': {'icon': 'bi-diagram-3', 'color': '#27ae60'},
         'Password Cracking': {'icon': 'bi-unlock', 'color': '#d35400'},
-        'Code Security': {'icon': 'bi-code-slash', 'color': '#16a085'},
         'Meta': {'icon': 'bi-gear', 'color': '#7f8c8d'},
     }
 

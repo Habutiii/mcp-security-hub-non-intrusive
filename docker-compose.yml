@@ -316,34 +316,6 @@ services:
           memory: 512M
 
   # ===========================================================================
-  # Exploitation
-  # ===========================================================================
-  searchsploit-mcp:
-    build:
-      context: ./exploitation/searchsploit-mcp
-      dockerfile: Dockerfile
-    image: searchsploit-mcp:latest
-    container_name: searchsploit-mcp
-    environment:
-      - SEARCHSPLOIT_OUTPUT_DIR=/app/output
-    volumes:
-      - searchsploit-output:/app/output
-    ports:
-      - "3018:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-
-  # ===========================================================================
   # Fuzzing
   # ===========================================================================
   dharma-mcp:
@@ -544,183 +516,6 @@ services:
           memory: 512M
 
   # ===========================================================================
-  # Blockchain Security
-  # ===========================================================================
-  daml-viewer-mcp:
-    build:
-      context: ./blockchain/daml-viewer-mcp
-      dockerfile: Dockerfile
-    image: daml-viewer-mcp:latest
-    container_name: daml-viewer-mcp
-
-    restart: "no"
-    profiles: [ "on-demand" ]
-
-    environment:
-      - DAML_VIEWER_OUTPUT_DIR=/app/output
-      - DAML_VIEWER_UPLOAD_DIR=/app/uploads
-      - DAML_VIEWER_TIMEOUT=${DAML_VIEWER_TIMEOUT:-120}
-      - DAML_VIEWER_MAX_CONCURRENT=${DAML_VIEWER_MAX_CONCURRENT:-3}
-      - DAML_VIEWER_MAX_FILE_SIZE=${DAML_VIEWER_MAX_FILE_SIZE:-104857600}
-      - DAML_VIEWER_ALLOW_ANY_PATH=${DAML_VIEWER_ALLOW_ANY_PATH:-0}
-
-    volumes:
-      - daml-viewer-output:/app/output
-      - daml-viewer-uploads:/app/uploads
-
-    networks:
-      - mcp-network
-
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-
-  solazy-mcp:
-    build:
-      context: ./blockchain/solazy-mcp
-      dockerfile: Dockerfile
-    image: solazy-mcp:latest
-    container_name: solazy-mcp
-
-    restart: "no"
-    profiles: [ "on-demand" ]
-
-    environment:
-      - SOLAZY_OUTPUT_DIR=/app/output
-      - SOLAZY_UPLOAD_DIR=/app/uploads
-      - SOLAZY_TIMEOUT=${SOLAZY_TIMEOUT:-300}
-      - SOLAZY_MAX_CONCURRENT=${SOLAZY_MAX_CONCURRENT:-2}
-      - SOLAZY_MAX_FILE_SIZE=${SOLAZY_MAX_FILE_SIZE:-104857600}
-      - SOLAZY_ALLOW_ANY_PATH=${SOLAZY_ALLOW_ANY_PATH:-0}
-
-    volumes:
-      - solazy-output:/app/output
-      - solazy-uploads:/app/uploads
-
-    networks:
-      - mcp-network
-
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-
-  medusa-mcp:
-    build:
-      context: ./blockchain/medusa-mcp
-      dockerfile: Dockerfile
-    image: medusa-mcp:latest
-    container_name: medusa-mcp
-
-    restart: "no"
-    profiles: [ "on-demand" ]
-
-    environment:
-      - MEDUSA_OUTPUT_DIR=/app/output
-      - MEDUSA_UPLOAD_DIR=/app/uploads
-      - MEDUSA_TIMEOUT=${MEDUSA_TIMEOUT:-600}
-
-    volumes:
-      - medusa-output:/app/output
-      - medusa-uploads:/app/uploads
-
-    networks:
-      - mcp-network
-
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-
-  # ===========================================================================
-  # Cloud Security
-  # ===========================================================================
-  trivy-mcp:
-    build:
-      context: ./cloud-security/trivy-mcp
-      dockerfile: Dockerfile
-    image: trivy-mcp:latest
-    container_name: trivy-mcp
-    environment:
-      - TRIVY_OUTPUT_DIR=/app/output
-      - TRIVY_TIMEOUT=${TRIVY_TIMEOUT:-600}
-    volumes:
-      - trivy-output:/app/output
-      - trivy-cache:/home/mcpuser/.cache/trivy
-      - /var/run/docker.sock:/var/run/docker.sock:ro # For local image scanning
-    ports:
-      - "3011:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-
-  prowler-mcp:
-    build:
-      context: ./cloud-security/prowler-mcp
-      dockerfile: Dockerfile
-    image: prowler-mcp:latest
-    container_name: prowler-mcp
-    environment:
-      - PROWLER_OUTPUT_DIR=/app/output
-      - PROWLER_TIMEOUT=${PROWLER_TIMEOUT:-1800}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
-    volumes:
-      - prowler-output:/app/output
-    ports:
-      - "3014:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-
-  # ===========================================================================
   # Secrets Detection
   # ===========================================================================
   gitleaks-mcp:
@@ -776,30 +571,6 @@ services:
           memory: 256M
 
   # ===========================================================================
-  # Code Security
-  # ===========================================================================
-  semgrep-mcp:
-    build:
-      context: ./code-security/semgrep-mcp
-      dockerfile: Dockerfile
-    image: semgrep-mcp:latest
-    container_name: semgrep-mcp
-    ports:
-      - "3030:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-
-  # ===========================================================================
   # Additional Reconnaissance
   # ===========================================================================
   networksdb-mcp:
@@ -845,32 +616,6 @@ services:
         limits:
           cpus: '2'
           memory: 2G
-
-  # ===========================================================================
-  # Additional Cloud Security
-  # ===========================================================================
-  roadrecon-mcp:
-    build:
-      context: ./cloud-security/roadrecon-mcp
-      dockerfile: Dockerfile
-    image: roadrecon-mcp:latest
-    container_name: roadrecon-mcp
-    environment:
-      - ROADRECON_URL=${ROADRECON_URL:-http://localhost:5000}
-    ports:
-      - "3027:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
 
   # ===========================================================================
   # Meta / Security Tooling
@@ -1048,6 +793,8 @@ services:
       dockerfile: Dockerfile
     image: hashcat-mcp:latest
     container_name: hashcat-mcp
+    volumes:
+      - hashcat-wordlists:/app/wordlists
     ports:
       - "3037:3000"
     networks:
@@ -1116,20 +863,14 @@ volumes:
   yara-samples:
     driver: local
 
-  # Trivy
-  trivy-output:
-    driver: local
-  trivy-cache:
-    driver: local
-
-  # Prowler
-  prowler-output:
-    driver: local
-
   # ffuf
   ffuf-output:
     driver: local
   ffuf-wordlists:
+    driver: local
+
+  # Hashcat (runtime-downloaded SecLists dictionary)
+  hashcat-wordlists:
     driver: local
 
   # WhatWeb
@@ -1138,10 +879,6 @@ volumes:
 
   # Masscan
   masscan-output:
-    driver: local
-
-  # SearchSploit
-  searchsploit-output:
     driver: local
 
   # Capa
@@ -1156,24 +893,6 @@ volumes:
 
   # Gitleaks
   gitleaks-output:
-    driver: local
-
-  # DAML Viewer
-  daml-viewer-output:
-    driver: local
-  daml-viewer-uploads:
-    driver: local
-
-  # sol-azy
-  solazy-output:
-    driver: local
-  solazy-uploads:
-    driver: local
-
-  # Medusa
-  medusa-output:
-    driver: local
-  medusa-uploads:
     driver: local
 
   # Dharma

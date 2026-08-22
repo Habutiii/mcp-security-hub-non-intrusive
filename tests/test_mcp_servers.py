@@ -9,6 +9,7 @@ Tests verify:
 
 import importlib.util
 import sys
+import ast
 from pathlib import Path
 
 import pytest
@@ -28,15 +29,10 @@ MCP_SERVERS = [
     ("binary-analysis", "binwalk-mcp"),
     ("binary-analysis", "yara-mcp"),
     ("binary-analysis", "capa-mcp"),
-    ("cloud-security", "trivy-mcp"),
-    ("cloud-security", "prowler-mcp"),
-    ("exploitation", "searchsploit-mcp"),
-    ("blockchain", "daml-viewer-mcp"),
-    ("blockchain", "medusa-mcp"),
-    ("blockchain", "solazy-mcp"),
     ("fuzzing", "boofuzz-mcp"),
     ("fuzzing", "dharma-mcp"),
     ("secrets", "gitleaks-mcp"),
+    ("password-cracking", "hashcat-mcp"),
 ]
 
 # MCP servers that wrap external implementations (Dockerfile only, no server.py)
@@ -51,19 +47,17 @@ MCP_WRAPPERS = [
     ("binary-analysis", "radare2-mcp"),
     ("binary-analysis", "ghidra-mcp"),
     ("binary-analysis", "ida-mcp"),
-    ("cloud-security", "roadrecon-mcp"),
-    ("code-security", "semgrep-mcp"),
     ("osint", "maigret-mcp"),
     ("osint", "dnstwist-mcp"),
     ("threat-intel", "virustotal-mcp"),
     ("threat-intel", "otx-mcp"),
     ("active-directory", "bloodhound-mcp"),
-    ("password-cracking", "hashcat-mcp"),
     ("meta", "mcp-scan"),
 ]
 
 # All MCPs (for file existence tests)
 ALL_MCPS = MCP_SERVERS + MCP_WRAPPERS
+PYTHON_SERVER_FILES = sorted(ROOT_DIR.rglob("server.py"))
 
 
 def load_server_module(category: str, mcp_name: str):
@@ -194,6 +188,54 @@ class TestMCPServerPaths:
         """Test that README.md exists for each MCP."""
         readme_path = ROOT_DIR / category / mcp_name / "README.md"
         assert readme_path.exists(), f"Missing: {readme_path}"
+
+
+class TestCommandExecutionPolicy:
+    """Prevent regressions that turn MCP arguments into terminal access."""
+
+    @pytest.mark.parametrize(
+        "server_path",
+        PYTHON_SERVER_FILES,
+        ids=[str(path.relative_to(ROOT_DIR)) for path in PYTHON_SERVER_FILES],
+    )
+    def test_subprocesses_do_not_use_a_shell_or_raw_argument_escape_hatch(
+        self, server_path: Path
+    ):
+        source = server_path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(server_path))
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            function_name = ""
+            if isinstance(node.func, ast.Name):
+                function_name = node.func.id
+            elif isinstance(node.func, ast.Attribute):
+                function_name = node.func.attr
+
+            assert function_name != "create_subprocess_shell", (
+                f"{server_path} must not execute shell command strings"
+            )
+            if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                module_name = node.func.value.id
+                assert not (
+                    module_name in {"os", "subprocess"}
+                    and function_name in {"system", "popen", "Popen", "run", "check_call", "check_output"}
+                ), f"{server_path} must not use shell-capable process helpers"
+            if function_name == "create_subprocess_exec":
+                assert node.args and isinstance(node.args[0], (ast.Starred, ast.Constant)), (
+                    f"{server_path} must invoke subprocesses with a fixed executable or argument vector"
+                )
+
+        assert "extra_args" not in source, (
+            f"{server_path} must expose only explicitly modelled tool options"
+        )
+
+    def test_boofuzz_cannot_store_or_execute_caller_supplied_python(self):
+        source = (ROOT_DIR / "fuzzing" / "boofuzz-mcp" / "server.py").read_text(encoding="utf-8")
+        assert "boofuzz_create_script" not in source
+        assert "boofuzz_run_fuzzer" not in source
+        assert "create_subprocess_exec" not in source
 
 
 class TestMCPWrappers:

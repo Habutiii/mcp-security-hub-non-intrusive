@@ -1,73 +1,21 @@
-# Hashcat MCP Server
+# Dictionary-Only Hashcat MCP Server
 
-A Model Context Protocol server for [Hashcat](https://hashcat.net/hashcat/), the world's fastest password recovery tool.
+An MCP server for authorized password recovery using Hashcat's dictionary attack mode only.
 
-> **Note**: This MCP server wraps [MorDavid/hashcat-mcp](https://github.com/MorDavid/hashcat-mcp).
+## Restrictions
 
-## Tools
+- Exposes only `hashcat_dictionary_crack`.
+- Always invokes Hashcat with `--attack-mode 0`.
+- Does not accept masks, rules, hybrid modes, restore files, custom commands, or caller-selected wordlists.
+- Uses the SecLists `10k-most-common.txt` dictionary only.
+- Caps each attempt at five minutes.
 
-| Tool | Description |
-|------|-------------|
-| `crack_hash` | Crack a password hash using dictionary or brute-force attack |
-| `identify_hash` | Identify the type of a hash |
-| `list_hash_modes` | List supported hash types |
-| `benchmark` | Run hashcat benchmark |
+## SecLists runtime download
 
-## Features
+The image contains no wordlists. On container start, it downloads the fixed `10k-most-common.txt` URL from the official SecLists GitHub repository over HTTPS if it is not already present in `/app/wordlists`.
 
-- **Natural Language Interface**: Describe what you want to crack in plain English
-- **Multiple Attack Modes**: Dictionary, brute-force, rule-based, hybrid attacks
-- **Hash Identification**: Automatic hash type detection
-- **GPU Acceleration**: Leverage GPU for faster cracking
+For Compose deployments, mount a named volume at `/app/wordlists` to cache the downloaded dictionary between container starts. Delete that volume to force a fresh download.
 
-## Docker
+## Authorized use
 
-### Build
-
-```bash
-docker build -t hashcat-mcp .
-```
-
-### Run
-
-```bash
-docker run --rm -i \
-  -v /path/to/wordlists:/app/wordlists:ro \
-  hashcat-mcp
-```
-
-### With GPU Support
-
-```bash
-docker run --rm -i \
-  --gpus all \
-  -v /path/to/wordlists:/app/wordlists:ro \
-  hashcat-mcp
-```
-
-## Claude Desktop Configuration
-
-Add to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "hashcat": {
-      "command": "docker",
-      "args": [
-        "run", "--rm", "-i",
-        "-v", "/path/to/wordlists:/app/wordlists:ro",
-        "hashcat-mcp"
-      ]
-    }
-  }
-}
-```
-
-## Security Notice
-
-This tool is designed for authorized password security testing and recovery only. Only use on systems you own or have explicit permission to test.
-
-## License
-
-MIT
+Use only for credentials and systems included in written authorization. The MCP intentionally stops at low-risk dictionary recovery; any broader password-cracking strategy is a human-operated decision outside this server.

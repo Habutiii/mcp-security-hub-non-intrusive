@@ -8,14 +8,14 @@
 Production-ready, Dockerized MCP (Model Context Protocol) servers for offensive security tools. Enable AI assistants like Claude to perform security assessments, vulnerability scanning, and binary analysis.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/MCPs-38-brightgreen" alt="38 MCPs"/>
+  <img src="https://img.shields.io/badge/MCPs-30-brightgreen" alt="30 MCPs"/>
   <img src="https://img.shields.io/badge/Tools-300+-orange" alt="300+ Tools"/>
   <img src="https://img.shields.io/badge/Docker-Ready-blue" alt="Docker Ready"/>
 </p>
 
 ## Features
 
-- **38 MCP Servers** covering reconnaissance, web security, binary analysis, blockchain security, cloud security, code security, secrets detection, threat intelligence, OSINT, Active Directory, fuzzing, and more
+- **30 MCP Servers** covering reconnaissance, web security, binary analysis, secrets detection, threat intelligence, OSINT, Active Directory, fuzzing, and more
 - **300+ Security Tools** accessible via natural language through Claude or other MCP clients
 - **Production Hardened** - Non-root containers, minimal images, Trivy-scanned
 - **Docker Compose** orchestration for multi-tool workflows
@@ -110,33 +110,11 @@ For project-level config, copy `.mcp.json` to your project root. See [examples/]
 | [ghidra-mcp](./binary-analysis/ghidra-mcp) | - | Wrapper for [pyghidra-mcp](https://github.com/clearbluejar/pyghidra-mcp) - Headless AI-powered reverse engineering |
 | [ida-mcp](./binary-analysis/ida-mcp) | - | Wrapper for [ida-pro-mcp](https://github.com/mrexodia/ida-pro-mcp) - IDA Pro integration |
 
-### Blockchain Security (3 servers)
-
-| Server | Tools | Description |
-|--------|-------|-------------|
-| [daml-viewer-mcp](./blockchain/daml-viewer-mcp) | 1 | DAML access-control table generation and run tracking |
-| [medusa-mcp](./blockchain/medusa-mcp) | 4 | High-performance smart contract fuzzer for Solidity |
-| [solazy-mcp](./blockchain/solazy-mcp) | 8 | Solana sBPF static analysis and reverse engineering |
-
-### Cloud Security (3 servers)
-
-| Server | Tools | Description |
-|--------|-------|-------------|
-| [trivy-mcp](./cloud-security/trivy-mcp) | 7 | Container, filesystem, and IaC vulnerability scanning |
-| [prowler-mcp](./cloud-security/prowler-mcp) | 6 | AWS/Azure/GCP security auditing and compliance |
-| [roadrecon-mcp](./cloud-security/roadrecon-mcp) | 6 | Azure AD enumeration via [RoadRecon](https://github.com/atomicchonk/roadrecon_mcp_server) |
-
 ### Secrets Detection (1 server)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
 | [gitleaks-mcp](./secrets/gitleaks-mcp) | 5 | Find secrets and credentials in git repos and files |
-
-### Exploitation (1 server)
-
-| Server | Tools | Description |
-|--------|-------|-------------|
-| [searchsploit-mcp](./exploitation/searchsploit-mcp) | 5 | Exploit-DB search and retrieval |
 
 ### Fuzzing (2 servers)
 
@@ -169,13 +147,7 @@ For project-level config, copy `.mcp.json` to your project root. See [examples/]
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [hashcat-mcp](./password-cracking/hashcat-mcp) | - | Wrapper for [hashcat-mcp](https://github.com/MorDavid/hashcat-mcp) - Natural language hash cracking |
-
-### Code Security (1 server)
-
-| Server | Tools | Description |
-|--------|-------|-------------|
-| [semgrep-mcp](./code-security/semgrep-mcp) | 7 | Wrapper for [Semgrep MCP](https://github.com/semgrep/mcp) - Static code analysis with 5000+ rules |
+| [hashcat-mcp](./password-cracking/hashcat-mcp) | 1 | Dictionary-only, authorized password recovery using a runtime-downloaded SecLists wordlist |
 
 ### Meta (1 server)
 
@@ -271,20 +243,8 @@ mcp-security-hub/
 │   ├── capa-mcp/           # Capability detection
 │   ├── ghidra-mcp/         # Ghidra RE - pyghidra-mcp (headless)
 │   └── ida-mcp/            # IDA Pro (wrapper)
-├── blockchain/
-│   ├── daml-viewer-mcp/    # DAML access-control analysis
-│   ├── medusa-mcp/         # Smart contract fuzzing
-│   └── solazy-mcp/         # Solana analysis
-├── cloud-security/
-│   ├── trivy-mcp/          # Container scanning (wrapper)
-│   ├── prowler-mcp/        # Cloud auditing
-│   └── roadrecon-mcp/      # Azure AD enumeration
-├── code-security/
-│   └── semgrep-mcp/        # Static code analysis (wrapper)
 ├── secrets/
 │   └── gitleaks-mcp/       # Secrets detection
-├── exploitation/
-│   └── searchsploit-mcp/   # Exploit database
 ├── fuzzing/
 │   ├── boofuzz-mcp/        # Network protocol fuzzing using Boofuzz
 │   └── dharma-mcp/         # Grammar-based test case generation

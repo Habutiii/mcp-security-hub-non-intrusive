@@ -43,13 +43,20 @@ async def run_dharma(grammar_path: str, count: int) -> tuple[str, str]:
     """
     Executes the dharma command asynchronously.
     """
-    # Verify file exists
-    p = Path(grammar_path)
-    if not p.exists():
-        # Try relative to grammar_dir
-        p = Path(settings.grammar_dir) / grammar_path
-        if not p.exists():
-            return "", f"Grammar file not found: {grammar_path}"
+    if not isinstance(grammar_path, str) or not grammar_path:
+        return "", "Grammar path is required"
+    if not isinstance(count, int) or not 1 <= count <= 10_000:
+        return "", "count must be an integer between 1 and 10000"
+
+    # Grammar files are data, not a general filesystem-read capability.
+    grammar_root = Path(settings.grammar_dir).resolve()
+    p = (grammar_root / grammar_path).resolve()
+    try:
+        p.relative_to(grammar_root)
+    except ValueError:
+        return "", "Grammar path must remain inside the configured grammar directory"
+    if not p.is_file():
+        return "", f"Grammar file not found: {grammar_path}"
 
     grammar_file = str(p)
     
@@ -160,8 +167,13 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             
             logger.info(f"Generated temporary grammar file: {tmp_file_path}")
 
-            # Run dharma using the temp file
-            stdout, stderr = await run_dharma(tmp_file_path, count)
+            # Run the custom grammar through the same bounded grammar directory.
+            custom_dir = Path(settings.grammar_dir).resolve() / ".custom"
+            custom_dir.mkdir(parents=True, exist_ok=True)
+            custom_path = custom_dir / Path(tmp_file_path).name
+            Path(tmp_file_path).replace(custom_path)
+            tmp_file_path = str(custom_path)
+            stdout, stderr = await run_dharma(str(custom_path.relative_to(Path(settings.grammar_dir).resolve())), count)
 
             if stderr and "error" in stderr.lower():
                 return [TextContent(type="text", text=f"Error: {stderr}")]

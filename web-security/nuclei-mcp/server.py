@@ -172,7 +172,6 @@ async def run_nuclei_scan(
     severity: list[str] | None = None,
     rate_limit: int | None = None,
     timeout: int | None = None,
-    extra_args: list[str] | None = None,
 ) -> ScanResult:
     """Execute a nuclei scan asynchronously."""
     scan_id = str(uuid.uuid4())[:8]
@@ -220,10 +219,6 @@ async def run_nuclei_scan(
     # Add tag filter
     if tags:
         cmd.extend(["-tags", ",".join(tags)])
-
-    # Add extra arguments
-    if extra_args:
-        cmd.extend(extra_args)
 
     logger.info(f"Starting {scan_type} scan {scan_id} for target: {target}")
     logger.debug(f"Command: {' '.join(cmd)}")

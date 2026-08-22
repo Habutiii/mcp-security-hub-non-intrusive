@@ -146,7 +146,6 @@ async def run_sqlmap_scan(
     table: str | None = None,
     columns: list[str] | None = None,
     timeout: int | None = None,
-    extra_args: list[str] | None = None,
 ) -> ScanResult:
     """Execute a sqlmap scan asynchronously."""
     scan_id = str(uuid.uuid4())[:8]
@@ -202,9 +201,6 @@ async def run_sqlmap_scan(
         cmd.extend(["--cookie", cookie])
     if dbms:
         cmd.extend(["--dbms", dbms])
-    if extra_args:
-        cmd.extend(extra_args)
-
     logger.info(f"Starting {scan_type} scan {scan_id} for target: {target}")
     logger.debug(f"Command: {' '.join(cmd)}")
 

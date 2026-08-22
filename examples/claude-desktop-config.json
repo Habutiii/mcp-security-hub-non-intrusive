@@ -57,26 +57,6 @@
         "binwalk-mcp:latest"
       ]
     },
-    "trivy": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "/var/run/docker.sock:/var/run/docker.sock:ro",
-        "-v", "/path/to/scan:/app/target:ro",
-        "trivy-mcp:latest"
-      ]
-    },
-    "prowler": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "${HOME}/.aws:/home/mcpuser/.aws:ro",
-        "prowler-mcp:latest"
-      ],
-      "env": {
-        "AWS_DEFAULT_REGION": "us-east-1"
-      }
-    },
     "masscan": {
       "command": "docker",
       "args": ["run", "-i", "--rm", "--cap-add=NET_RAW", "masscan-mcp:latest"]
@@ -85,21 +65,9 @@
       "command": "docker",
       "args": ["run", "-i", "--rm", "whatweb-mcp:latest"]
     },
-    "searchsploit": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "searchsploit-mcp:latest"]
-    },
     "waybackurls": {
       "command": "docker",
       "args": ["run", "-i", "--rm", "waybackurls-mcp:latest"]
-    },
-    "semgrep": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "/path/to/code:/app/target:ro",
-        "semgrep-mcp:latest"
-      ]
     }
   }
 }

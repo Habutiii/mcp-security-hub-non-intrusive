@@ -40,18 +40,8 @@ MCPS=(
     "binary-analysis/radare2-mcp"
     "binary-analysis/ghidra-mcp"
     "binary-analysis/ida-mcp"
-    # Blockchain Security
-    "blockchain/daml-viewer-mcp"
-    "blockchain/medusa-mcp"
-    "blockchain/solazy-mcp"
-    # Cloud Security
-    "cloud-security/trivy-mcp"
-    "cloud-security/prowler-mcp"
-    "cloud-security/roadrecon-mcp"
     # Secrets Detection
     "secrets/gitleaks-mcp"
-    # Exploitation
-    "exploitation/searchsploit-mcp"
     # Fuzzing
     "fuzzing/boofuzz-mcp"
     "fuzzing/dharma-mcp"
@@ -65,8 +55,6 @@ MCPS=(
     "active-directory/bloodhound-mcp"
     # Password Cracking
     "password-cracking/hashcat-mcp"
-    # Code Security
-    "code-security/semgrep-mcp"
     # Meta
     "meta/mcp-scan"
 )

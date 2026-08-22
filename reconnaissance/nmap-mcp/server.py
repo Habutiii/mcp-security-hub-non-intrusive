@@ -189,7 +189,6 @@ async def run_nmap_scan(
     scripts: list[str] | None = None,
     timing: int = 3,
     timeout: int | None = None,
-    extra_args: list[str] | None = None,
 ) -> ScanResult:
     """Execute an nmap scan asynchronously."""
     scan_id = str(uuid.uuid4())[:8]
@@ -228,10 +227,6 @@ async def run_nmap_scan(
     # Add port specification
     if ports:
         cmd.extend(["-p", ports])
-
-    # Add extra arguments
-    if extra_args:
-        cmd.extend(extra_args)
 
     # Add target
     cmd.append(target)

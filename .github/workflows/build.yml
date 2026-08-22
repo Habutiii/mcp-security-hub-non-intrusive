@@ -73,20 +73,6 @@ jobs:
             context: ./binary-analysis/ghidra-mcp
           - name: ida-mcp
             context: ./binary-analysis/ida-mcp
-          # Blockchain Security
-          - name: daml-viewer-mcp
-            context: ./blockchain/daml-viewer-mcp
-          - name: medusa-mcp
-            context: ./blockchain/medusa-mcp
-          - name: solazy-mcp
-            context: ./blockchain/solazy-mcp
-          # Cloud Security
-          - name: trivy-mcp
-            context: ./cloud-security/trivy-mcp
-          - name: prowler-mcp
-            context: ./cloud-security/prowler-mcp
-          - name: roadrecon-mcp
-            context: ./cloud-security/roadrecon-mcp
           # Secrets Detection
           - name: gitleaks-mcp
             context: ./secrets/gitleaks-mcp
@@ -114,9 +100,6 @@ jobs:
           # Password Cracking
           - name: hashcat-mcp
             context: ./password-cracking/hashcat-mcp
-          # Code Security
-          - name: semgrep-mcp
-            context: ./code-security/semgrep-mcp
           # Meta
           - name: mcp-scan
             context: ./meta/mcp-scan

@@ -24,39 +24,6 @@
         "gitleaks-mcp:latest"
       ]
     },
-    "radare2": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "/path/to/binaries:/samples:ro",
-        "radare2-mcp:latest"
-      ]
-    },
-    "yara": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "/path/to/samples:/app/samples:ro",
-        "-v", "/path/to/yara-rules:/app/rules:ro",
-        "yara-mcp:latest"
-      ]
-    },
-    "capa": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "/path/to/samples:/app/samples:ro",
-        "capa-mcp:latest"
-      ]
-    },
-    "binwalk": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "/path/to/firmware:/app/samples:ro",
-        "binwalk-mcp:latest"
-      ]
-    },
     "masscan": {
       "command": "docker",
       "args": ["run", "-i", "--rm", "--cap-add=NET_RAW", "masscan-mcp:latest"]

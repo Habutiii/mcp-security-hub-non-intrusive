@@ -75,8 +75,6 @@ jobs:
           - web-security/nuclei-mcp
           - web-security/sqlmap-mcp
           - exploitation/metasploit-mcp
-          - binary-analysis/ghidra-mcp
-          - binary-analysis/radare2-mcp
           - mobile-security/mobsf-mcp
     steps:
       - name: Checkout
@@ -136,7 +134,6 @@ jobs:
         server:
           - reconnaissance/nmap-mcp
           - web-security/nuclei-mcp
-          - binary-analysis/ghidra-mcp
     steps:
       - name: Checkout
         uses: actions/checkout@v4

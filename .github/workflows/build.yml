@@ -60,19 +60,6 @@ jobs:
             context: ./web-security/waybackurls-mcp
           - name: burp-mcp
             context: ./web-security/burp-mcp
-          # Binary Analysis
-          - name: binwalk-mcp
-            context: ./binary-analysis/binwalk-mcp
-          - name: yara-mcp
-            context: ./binary-analysis/yara-mcp
-          - name: capa-mcp
-            context: ./binary-analysis/capa-mcp
-          - name: radare2-mcp
-            context: ./binary-analysis/radare2-mcp
-          - name: ghidra-mcp
-            context: ./binary-analysis/ghidra-mcp
-          - name: ida-mcp
-            context: ./binary-analysis/ida-mcp
           # Secrets Detection
           - name: gitleaks-mcp
             context: ./secrets/gitleaks-mcp

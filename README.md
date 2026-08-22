@@ -5,17 +5,17 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blue.svg)](https://modelcontextprotocol.io/)
 
-Production-ready, Dockerized MCP (Model Context Protocol) servers for offensive security tools. Enable AI assistants like Claude to perform security assessments, vulnerability scanning, and binary analysis.
+Production-ready, Dockerized MCP (Model Context Protocol) servers for offensive security tools. Enable AI assistants like Claude to perform security assessments and vulnerability scanning.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/MCPs-30-brightgreen" alt="30 MCPs"/>
+  <img src="https://img.shields.io/badge/MCPs-24-brightgreen" alt="24 MCPs"/>
   <img src="https://img.shields.io/badge/Tools-300+-orange" alt="300+ Tools"/>
   <img src="https://img.shields.io/badge/Docker-Ready-blue" alt="Docker Ready"/>
 </p>
 
 ## Features
 
-- **30 MCP Servers** covering reconnaissance, web security, binary analysis, secrets detection, threat intelligence, OSINT, Active Directory, fuzzing, and more
+- **24 MCP Servers** covering reconnaissance, web security, secrets detection, threat intelligence, OSINT, Active Directory, fuzzing, and more
 - **300+ Security Tools** accessible via natural language through Claude or other MCP clients
 - **Production Hardened** - Non-root containers, minimal images, Trivy-scanned
 - **Docker Compose** orchestration for multi-tool workflows
@@ -63,10 +63,6 @@ Copy the example config to your Claude Desktop configuration:
       "command": "docker",
       "args": ["run", "-i", "--rm", "-v", "/path/to/repos:/app/target:ro", "gitleaks-mcp:latest"]
     },
-    "radare2": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "-v", "/path/to/binaries:/samples:ro", "radare2-mcp:latest"]
-    }
   }
 }
 ```
@@ -98,17 +94,6 @@ For project-level config, copy `.mcp.json` to your project root. See [examples/]
 | [ffuf-mcp](./web-security/ffuf-mcp) | 9 | Web fuzzing for directories, files, parameters, and virtual hosts |
 | [waybackurls-mcp](./web-security/waybackurls-mcp) | 3 | Fetch historical URLs from Wayback Machine for reconnaissance |
 | [burp-mcp](./web-security/burp-mcp) | - | Wrapper for [official Burp Suite MCP](https://github.com/PortSwigger/mcp-server) |
-
-### Binary Analysis (6 servers)
-
-| Server | Tools | Description |
-|--------|-------|-------------|
-| [radare2-mcp](./binary-analysis/radare2-mcp) | 32 | Wrapper for [official radare2-mcp](https://github.com/radareorg/radare2-mcp) - disassembly, decompilation |
-| [binwalk-mcp](./binary-analysis/binwalk-mcp) | 6 | Firmware analysis, signature scanning, extraction |
-| [yara-mcp](./binary-analysis/yara-mcp) | 7 | Pattern matching for malware classification |
-| [capa-mcp](./binary-analysis/capa-mcp) | 5 | Capability detection in executables |
-| [ghidra-mcp](./binary-analysis/ghidra-mcp) | - | Wrapper for [pyghidra-mcp](https://github.com/clearbluejar/pyghidra-mcp) - Headless AI-powered reverse engineering |
-| [ida-mcp](./binary-analysis/ida-mcp) | - | Wrapper for [ida-pro-mcp](https://github.com/mrexodia/ida-pro-mcp) - IDA Pro integration |
 
 ### Secrets Detection (1 server)
 
@@ -186,22 +171,6 @@ Found 3 issues:
 - INFO: Missing security headers
 ```
 
-### Binary Analysis
-
-```
-You: "Analyze this firmware image for security issues"
-
-Claude: I'll extract and analyze the firmware.
-[Uses binwalk-mcp to extract filesystem]
-[Uses yara-mcp to scan for malware patterns]
-[Uses capa-mcp to identify capabilities]
-
-Analysis complete:
-- Extracted 847 files from SquashFS filesystem
-- Found hardcoded credentials in /etc/shadow
-- Identified network backdoor capability
-```
-
 ## Security Hardening
 
 All containers implement defense-in-depth:
@@ -236,13 +205,6 @@ mcp-security-hub/
 │   ├── nikto-mcp/          # Web server scanning (wrapper)
 │   ├── ffuf-mcp/           # Web fuzzing
 │   └── burp-mcp/           # Burp Suite (wrapper)
-├── binary-analysis/
-│   ├── radare2-mcp/        # Reverse engineering (wrapper)
-│   ├── binwalk-mcp/        # Firmware analysis
-│   ├── yara-mcp/           # Malware detection
-│   ├── capa-mcp/           # Capability detection
-│   ├── ghidra-mcp/         # Ghidra RE - pyghidra-mcp (headless)
-│   └── ida-mcp/            # IDA Pro (wrapper)
 ├── secrets/
 │   └── gitleaks-mcp/       # Secrets detection
 ├── fuzzing/

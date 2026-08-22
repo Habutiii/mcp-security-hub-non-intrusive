@@ -52,10 +52,6 @@ MCPs run in isolated Docker containers. To give them access to files:
 | MCP | Host Path | Container Path | Purpose |
 |-----|-----------|----------------|---------|
 | gitleaks | Your repos | `/app/target` | Scan for secrets |
-| yara | Sample files | `/app/samples` | Malware scanning |
-| yara | YARA rules | `/app/rules` | Custom rules |
-| capa | Binaries | `/app/samples` | Capability detection |
-| radare2 | Binaries | `/samples` | Reverse engineering |
 
 ## Special Permissions
 

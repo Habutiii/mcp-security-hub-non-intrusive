@@ -194,7 +194,6 @@ def generate_site():
     category_info = {
         'Reconnaissance': {'icon': 'bi-search', 'color': '#3498db'},
         'Web Security': {'icon': 'bi-globe', 'color': '#e74c3c'},
-        'Binary Analysis': {'icon': 'bi-file-binary', 'color': '#9b59b6'},
         'Secrets Detection': {'icon': 'bi-key', 'color': '#f39c12'},
         'Fuzzing': {'icon': 'bi-shuffle', 'color': '#e67e22'},
         'OSINT': {'icon': 'bi-person-badge', 'color': '#2980b9'},

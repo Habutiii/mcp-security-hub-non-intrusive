@@ -33,13 +33,6 @@ MCPS=(
     "web-security/ffuf-mcp"
     "web-security/waybackurls-mcp"
     "web-security/burp-mcp"
-    # Binary Analysis
-    "binary-analysis/binwalk-mcp"
-    "binary-analysis/yara-mcp"
-    "binary-analysis/capa-mcp"
-    "binary-analysis/radare2-mcp"
-    "binary-analysis/ghidra-mcp"
-    "binary-analysis/ida-mcp"
     # Secrets Detection
     "secrets/gitleaks-mcp"
     # Fuzzing

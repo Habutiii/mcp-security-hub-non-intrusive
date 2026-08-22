@@ -376,146 +376,6 @@ services:
           memory: 512M
 
   # ===========================================================================
-  # Binary Analysis
-  # ===========================================================================
-  ghidra-mcp:
-    build:
-      context: ./binary-analysis/ghidra-mcp
-      dockerfile: Dockerfile
-    image: ghidra-mcp:latest
-    container_name: ghidra-mcp
-    environment:
-      - GHIDRA_INSTALL_DIR=/opt/ghidra
-    volumes:
-      - ghidra-projects:/app/projects
-      - ghidra-samples:/app/samples:ro
-    ports:
-      - "3006:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 4G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
-
-  radare2-mcp:
-    build:
-      context: ./binary-analysis/radare2-mcp
-      dockerfile: Dockerfile
-    image: radare2-mcp:latest
-    container_name: radare2-mcp
-    volumes:
-      - radare2-samples:/app/samples:ro
-    ports:
-      - "3007:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-
-  binwalk-mcp:
-    build:
-      context: ./binary-analysis/binwalk-mcp
-      dockerfile: Dockerfile
-    image: binwalk-mcp:latest
-    container_name: binwalk-mcp
-    environment:
-      - BINWALK_OUTPUT_DIR=/app/output
-      - BINWALK_TIMEOUT=${BINWALK_TIMEOUT:-300}
-    volumes:
-      - binwalk-output:/app/output
-      - binwalk-uploads:/app/uploads
-    ports:
-      - "3012:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-
-  yara-mcp:
-    build:
-      context: ./binary-analysis/yara-mcp
-      dockerfile: Dockerfile
-    image: yara-mcp:latest
-    container_name: yara-mcp
-    environment:
-      - YARA_RULES_DIR=/app/rules
-      - YARA_OUTPUT_DIR=/app/output
-      - YARA_TIMEOUT=${YARA_TIMEOUT:-300}
-    volumes:
-      - yara-output:/app/output
-      - yara-samples:/app/samples
-    ports:
-      - "3013:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-
-  capa-mcp:
-    build:
-      context: ./binary-analysis/capa-mcp
-      dockerfile: Dockerfile
-    image: capa-mcp:latest
-    container_name: capa-mcp
-    environment:
-      - CAPA_OUTPUT_DIR=/app/output
-      - CAPA_TIMEOUT=${CAPA_TIMEOUT:-300}
-    volumes:
-      - capa-output:/app/output
-      - capa-samples:/app/samples:ro
-    ports:
-      - "3019:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-
-  # ===========================================================================
   # Secrets Detection
   # ===========================================================================
   gitleaks-mcp:
@@ -664,30 +524,6 @@ services:
         limits:
           cpus: '1'
           memory: 512M
-
-  # ===========================================================================
-  # Binary Analysis (additional)
-  # ===========================================================================
-  ida-mcp:
-    build:
-      context: ./binary-analysis/ida-mcp
-      dockerfile: Dockerfile
-    image: ida-mcp:latest
-    container_name: ida-mcp
-    ports:
-      - "3032:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
 
   # ===========================================================================
   # OSINT
@@ -841,28 +677,6 @@ volumes:
   nikto-output:
     driver: local
 
-  # Ghidra
-  ghidra-projects:
-    driver: local
-  ghidra-samples:
-    driver: local
-
-  # Radare2
-  radare2-samples:
-    driver: local
-
-  # Binwalk
-  binwalk-output:
-    driver: local
-  binwalk-uploads:
-    driver: local
-
-  # YARA
-  yara-output:
-    driver: local
-  yara-samples:
-    driver: local
-
   # ffuf
   ffuf-output:
     driver: local
@@ -879,12 +693,6 @@ volumes:
 
   # Masscan
   masscan-output:
-    driver: local
-
-  # Capa
-  capa-output:
-    driver: local
-  capa-samples:
     driver: local
 
   # Waybackurls

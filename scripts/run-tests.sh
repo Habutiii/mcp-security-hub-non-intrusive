@@ -39,7 +39,7 @@ HEALTH_CHECK_INTERVAL=5
 # Services to test (add more as they are implemented)
 AVAILABLE_SERVICES="nuclei-mcp"
 # Uncomment as services are implemented:
-# AVAILABLE_SERVICES="nuclei-mcp nmap-mcp shodan-mcp sqlmap-mcp metasploit-mcp ghidra-mcp radare2-mcp mobsf-mcp"
+# AVAILABLE_SERVICES="nuclei-mcp nmap-mcp shodan-mcp sqlmap-mcp metasploit-mcp mobsf-mcp"
 
 # =============================================================================
 # Service Configuration Functions (portable alternative to associative arrays)
@@ -53,8 +53,6 @@ get_service_port() {
         shodan-mcp)     echo 3002 ;;
         sqlmap-mcp)     echo 3004 ;;
         metasploit-mcp) echo 3005 ;;
-        ghidra-mcp)     echo 3006 ;;
-        radare2-mcp)    echo 3007 ;;
         mobsf-mcp)      echo 3008 ;;
         *)              echo 3000 ;;
     esac
@@ -68,8 +66,6 @@ get_service_dir() {
         shodan-mcp)     echo "reconnaissance/shodan-mcp" ;;
         sqlmap-mcp)     echo "web-security/sqlmap-mcp" ;;
         metasploit-mcp) echo "exploitation/metasploit-mcp" ;;
-        ghidra-mcp)     echo "binary-analysis/ghidra-mcp" ;;
-        radare2-mcp)    echo "binary-analysis/radare2-mcp" ;;
         mobsf-mcp)      echo "mobile-security/mobsf-mcp" ;;
         *)              echo "" ;;
     esac

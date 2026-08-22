@@ -4,10 +4,6 @@
 
 FROM node:20-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="PD-Tools MCP Server - ProjectDiscovery tools bundle"
-LABEL org.opencontainers.image.licenses="MIT"
-
 # Note: node:20-alpine already has user 'node' with UID/GID 1000
 
 # Install Go and build dependencies

@@ -4,10 +4,6 @@
 
 FROM python:3.12-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/mcp-security-hub"
-LABEL org.opencontainers.image.description="NetworksDB MCP Server - IP/ASN/DNS lookups"
-LABEL org.opencontainers.image.licenses="MIT"
-
 RUN addgroup -g 1000 mcpuser && \
     adduser -D -u 1000 -G mcpuser mcpuser
 

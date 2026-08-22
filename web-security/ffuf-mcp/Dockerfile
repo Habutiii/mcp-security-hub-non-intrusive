@@ -3,10 +3,6 @@
 
 FROM python:3.12-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="FFUF MCP Server - Fast web fuzzer"
-LABEL org.opencontainers.image.licenses="MIT"
-
 # Security: Create non-root user
 RUN addgroup -g 1000 mcpuser && \
     adduser -D -u 1000 -G mcpuser mcpuser

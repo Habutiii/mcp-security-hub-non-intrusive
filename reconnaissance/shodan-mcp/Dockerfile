@@ -4,11 +4,6 @@
 
 FROM node:20-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="Shodan MCP Server - Wrapper around BurtTheCoder/mcp-shodan"
-LABEL org.opencontainers.image.licenses="MIT"
-LABEL upstream.repo="https://github.com/BurtTheCoder/mcp-shodan"
-
 RUN apk add --no-cache tini
 
 WORKDIR /home/node

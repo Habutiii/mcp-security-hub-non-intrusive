@@ -4,10 +4,6 @@
 # We use 3.10 instead of 3.12 for compatibility with dharma
 FROM python:3.10-slim
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="Dharma MCP Server - Grammar-based fuzzer"
-LABEL org.opencontainers.image.licenses="MIT"
-
 # Security: Create non-root user
 RUN groupadd -g 1000 mcpuser && \
     useradd -u 1000 -g mcpuser -m mcpuser

@@ -4,10 +4,6 @@
 FROM python:3.12-alpine AS production
 
 # Labels
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="Nmap MCP Server - Network reconnaissance and port scanning"
-LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.vendor="Fuzzing Labs"
 
 # Security: Create non-root user
 RUN addgroup -g 1000 mcpuser && \

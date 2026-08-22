@@ -3,10 +3,6 @@
 
 FROM ruby:3.2-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="WhatWeb MCP Server - Web technology fingerprinting"
-LABEL org.opencontainers.image.licenses="MIT"
-
 RUN addgroup -g 1000 mcpuser && \
     adduser -D -u 1000 -G mcpuser mcpuser
 

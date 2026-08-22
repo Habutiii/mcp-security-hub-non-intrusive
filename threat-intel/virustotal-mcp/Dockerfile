@@ -4,10 +4,6 @@
 
 FROM node:20-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="VirusTotal MCP Server - Malware and threat intelligence"
-LABEL org.opencontainers.image.licenses="MIT"
-
 RUN apk add --no-cache \
     tini \
     git \

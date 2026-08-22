@@ -3,10 +3,6 @@
 
 FROM python:3.12-slim
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="Boofuzz MCP Server - Protocol Fuzzing"
-LABEL org.opencontainers.image.licenses="MIT"
-
 # Security: Create non-root user
 RUN groupadd -g 1000 mcpuser && \
     useradd -u 1000 -g mcpuser -m mcpuser

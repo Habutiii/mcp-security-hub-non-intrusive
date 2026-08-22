@@ -23,10 +23,6 @@ RUN ./gradlew build -x test
 # Runtime stage - use JRE for smaller image
 FROM eclipse-temurin:21-jre-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="Burp Suite MCP Server - AI-powered web application security testing"
-LABEL org.opencontainers.image.licenses="GPL-3.0"
-
 RUN apk add --no-cache tini && rm -rf /var/cache/apk/*
 
 WORKDIR /app

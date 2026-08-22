@@ -77,10 +77,6 @@ CMD ["node", "dist/index.js"]
 # =============================================================================
 # Labels for container metadata
 # =============================================================================
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="Offensive Security MCP Server"
-LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.vendor="Fuzzing Labs"
 
 # =============================================================================
 # Python-based MCP Template (Alternative)

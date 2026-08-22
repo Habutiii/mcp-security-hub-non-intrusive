@@ -4,10 +4,6 @@
 
 FROM node:20-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="Nikto MCP Server - Web server vulnerability scanner"
-LABEL org.opencontainers.image.licenses="MIT"
-
 # Security: Use existing node user (uid/gid 1000 in node:alpine)
 # The node:alpine image already has a 'node' user with uid/gid 1000
 

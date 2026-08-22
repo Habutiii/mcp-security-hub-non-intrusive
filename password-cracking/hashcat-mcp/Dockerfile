@@ -1,10 +1,6 @@
 # Dictionary-only Hashcat MCP Server
 FROM python:3.12-slim
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/offensive-security-mcps"
-LABEL org.opencontainers.image.description="Dictionary-only password recovery MCP"
-LABEL org.opencontainers.image.licenses="MIT"
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \

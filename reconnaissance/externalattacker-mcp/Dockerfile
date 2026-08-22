@@ -4,10 +4,6 @@
 
 FROM python:3.12-slim
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/mcp-security-hub"
-LABEL org.opencontainers.image.description="ExternalAttacker MCP Server - Attack surface mapping"
-LABEL org.opencontainers.image.licenses="MIT"
-
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git golang-go tini ca-certificates libpcap-dev gcc libc6-dev && \
     rm -rf /var/lib/apt/lists/*

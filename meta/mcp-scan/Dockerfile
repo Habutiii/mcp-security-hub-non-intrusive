@@ -4,10 +4,6 @@
 
 FROM python:3.13-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/FuzzingLabs/mcp-security-hub"
-LABEL org.opencontainers.image.description="MCP-Scan - Scan MCP servers for vulnerabilities"
-LABEL org.opencontainers.image.licenses="Apache-2.0"
-
 RUN addgroup -g 1000 mcpuser && \
     adduser -D -u 1000 -G mcpuser mcpuser
 

@@ -1,63 +1,31 @@
-# PD-Tools MCP Server
-# Wrapper for ProjectDiscovery tools (subfinder, httpx, katana, nuclei, dnsx, naabu)
-# Based on: https://github.com/intelligent-ears/pd-tools-mcp
+# Restricted ProjectDiscovery reconnaissance MCP.
+# Upstream source is vendored at vendor/ (commit 0698fb966114435233bf20e85483694d6ef0e450).
+FROM python:3.12-slim
 
-FROM node:20-alpine
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates golang-go tini && \
+    rm -rf /var/lib/apt/lists/*
 
-# Note: node:20-alpine already has user 'node' with UID/GID 1000
+ENV GOPATH=/go
+ENV PATH=/go/bin:$PATH
 
-# Install Go and build dependencies
-RUN apk add --no-cache \
-    ca-certificates \
-    tini \
-    git \
-    go \
-    curl \
-    libpcap-dev \
-    build-base \
-    && rm -rf /var/cache/apk/*
+# Only discovery tools are installed. Nuclei and its unrestricted template engine are excluded.
+RUN go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@v2.9.0 && \
+    go install github.com/projectdiscovery/dnsx/cmd/dnsx@v1.3.0 && \
+    go install github.com/projectdiscovery/naabu/v2/cmd/naabu@v2.6.1 && \
+    go install github.com/projectdiscovery/httpx/cmd/httpx@v1.9.0 && \
+    go install github.com/projectdiscovery/katana/cmd/katana@v1.7.0
 
-# Set Go environment
-ENV GOPATH=/home/node/go
-ENV PATH=$PATH:$GOPATH/bin
-
-# Switch to non-root user for Go installations
-USER node
-
-# Install ProjectDiscovery tools
-RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest && \
-    go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest && \
-    go install -v github.com/projectdiscovery/katana/cmd/katana@latest && \
-    go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest && \
-    go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest && \
-    go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
-
-# Verify installations
-RUN subfinder -version && \
-    httpx -version && \
-    katana -version && \
-    nuclei -version && \
-    dnsx -version && \
-    naabu -version
-
-# Clone and build pd-tools-mcp
+RUN useradd --create-home --uid 1000 mcpuser
 WORKDIR /app
-USER root
-RUN git clone --depth 1 https://github.com/intelligent-ears/pd-tools-mcp.git /app && \
-    chown -R node:node /app
 
-USER node
-RUN npm install && npm run build
+COPY requirements.txt server.py ./
+COPY vendor/ ./vendor/
+RUN pip install --no-cache-dir -r requirements.txt && chown -R mcpuser:mcpuser /app
 
-# Create output directories
-RUN mkdir -p /app/output
+USER mcpuser
+ENV PD_TIMEOUT=120
+ENV PD_MAX_CONCURRENT=1
 
-# Environment variables
-ENV NODE_ENV=production
-ENV PATH=$PATH:/home/node/go/bin
-
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD pgrep -f "node.*index.js" > /dev/null || exit 1
-
-ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node", "build/index.js"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["python", "server.py"]

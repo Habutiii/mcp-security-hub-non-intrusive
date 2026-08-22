@@ -1,6 +1,6 @@
 # PD-Tools MCP Server
 
-A Dockerized wrapper for [pd-tools-mcp](https://github.com/intelligent-ears/pd-tools-mcp) that provides access to ProjectDiscovery security tools.
+A restricted, vendored implementation based on [pd-tools-mcp](https://github.com/intelligent-ears/pd-tools-mcp). It exposes only bounded, non-mutating ProjectDiscovery discovery operations.
 
 ## Included Tools
 
@@ -9,17 +9,14 @@ A Dockerized wrapper for [pd-tools-mcp](https://github.com/intelligent-ears/pd-t
 | **subfinder** | Fast passive subdomain enumeration |
 | **httpx** | HTTP probing and fingerprinting |
 | **katana** | Next-generation web crawler |
-| **nuclei** | Vulnerability scanner with templates |
 | **dnsx** | Fast DNS toolkit |
 | **naabu** | Fast port scanner |
 
 ## Features
 
-This is a wrapper around the community pd-tools-mcp that:
-- Bundles all ProjectDiscovery tools in a single container
-- Pre-installs tools from latest releases
-- Follows security hardening best practices
-- Ready for Docker Compose orchestration
+The MCP intentionally excludes Nuclei, unrestricted templates, screenshots, redirects, and the automated bug-bounty workflow. Its tools use fixed options: 20 targets maximum, one concurrent run, 120-second timeout, low HTTP/port-scan rates, a crawl depth of two, and no caller-supplied executable arguments.
+
+The reviewed upstream source is retained in [`vendor/`](./vendor/) for provenance. The restricted runtime is [`server.py`](./server.py); see [`UPSTREAM.md`](./UPSTREAM.md).
 
 ## Docker
 
@@ -70,12 +67,6 @@ Probe these hosts with httpx to find live web servers
 Crawl https://example.com with katana to discover endpoints
 ```
 
-### Vulnerability scanning
-
-```
-Run nuclei scan against https://example.com for CVEs
-```
-
 ### DNS reconnaissance
 
 ```
@@ -96,7 +87,7 @@ This is a Docker wrapper for:
 
 ## Security Notice
 
-These tools are designed for authorized security testing only. Always ensure you have permission before scanning any systems you do not own.
+These tools are designed for authorized, non-destructive security testing only. They generate active discovery traffic and target-side logs, but do not expose database changes, target-side command execution, arbitrary request controls, or arbitrary scanner options.
 
 ## License
 

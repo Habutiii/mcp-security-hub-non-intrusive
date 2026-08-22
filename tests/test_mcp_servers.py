@@ -22,6 +22,8 @@ MCP_SERVERS = [
     ("reconnaissance", "nmap-mcp"),
     ("reconnaissance", "whatweb-mcp"),
     ("reconnaissance", "masscan-mcp"),
+    ("reconnaissance", "pd-tools-mcp"),
+    ("reconnaissance", "externalattacker-mcp"),
     ("web-security", "nuclei-mcp"),
     ("web-security", "sqlmap-mcp"),
     ("web-security", "ffuf-mcp"),
@@ -35,10 +37,8 @@ MCP_SERVERS = [
 # MCP servers that wrap external implementations (Dockerfile only, no server.py)
 MCP_WRAPPERS = [
     ("reconnaissance", "shodan-mcp"),
-    ("reconnaissance", "pd-tools-mcp"),
     ("reconnaissance", "zoomeye-mcp"),
     ("reconnaissance", "networksdb-mcp"),
-    ("reconnaissance", "externalattacker-mcp"),
     ("web-security", "nikto-mcp"),
     ("web-security", "burp-mcp"),
     ("osint", "maigret-mcp"),

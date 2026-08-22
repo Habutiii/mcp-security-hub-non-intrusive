@@ -88,12 +88,12 @@ For project-level config, copy `.mcp.json` to your project root. See [examples/]
 |--------|-------|-------------|
 | [nmap-mcp](./reconnaissance/nmap-mcp) | 8 | Port scanning, service detection, OS fingerprinting, NSE scripts |
 | [shodan-mcp](./reconnaissance/shodan-mcp) | - | Wrapper for [official Shodan MCP](https://github.com/BurtTheCoder/mcp-shodan) |
-| [pd-tools-mcp](./reconnaissance/pd-tools-mcp) | - | Wrapper for [ProjectDiscovery tools](https://github.com/intelligent-ears/pd-tools-mcp) (subfinder, httpx, katana) |
+| [pd-tools-mcp](./reconnaissance/pd-tools-mcp) | 5 | Restricted, vendored ProjectDiscovery discovery tools (subfinder, dnsx, naabu, httpx, katana) |
 | [whatweb-mcp](./reconnaissance/whatweb-mcp) | 5 | Web technology fingerprinting and CMS detection |
 | [masscan-mcp](./reconnaissance/masscan-mcp) | 6 | High-speed port scanning for large networks |
 | [zoomeye-mcp](./reconnaissance/zoomeye-mcp) | - | Wrapper for [ZoomEye MCP](https://github.com/zoomeye-ai/mcp_zoomeye) - Cyberspace search engine |
 | [networksdb-mcp](./reconnaissance/networksdb-mcp) | 4 | IP/ASN/DNS lookups via [NetworksDB](https://github.com/MorDavid/NetworksDB-MCP) |
-| [externalattacker-mcp](./reconnaissance/externalattacker-mcp) | 6 | Attack surface mapping with [ExternalAttacker](https://github.com/MorDavid/ExternalAttacker-MCP) |
+| [externalattacker-mcp](./reconnaissance/externalattacker-mcp) | 5 | Restricted, vendored external attack-surface discovery |
 
 ### Web Security (6 servers)
 

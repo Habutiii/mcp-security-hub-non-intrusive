@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Run Security Tool</h5>
+            </div>
+            <div class="card-body">
+                <form id="toolForm" onsubmit="runTool(event)">
+                    <div class="mb-3">
+                        <label for="tool" class="form-label">Select Tool</label>
+                        <select class="form-select" id="tool" name="tool" required>
+                            <option value="">Choose a tool...</option>
+                            {% for tool in tools %}
+                            <option value="{{ tool }}">{{ tool }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="args" class="form-label">Arguments</label>
+                        <input type="text" class="form-control" id="args" name="args" placeholder="-d example.com -v" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Run Tool</button>
+                </form>
+                
+                <div id="resultContainer" class="mt-4" style="display: none;">
+                    <h5>Results:</h5>
+                    <div class="alert alert-info">
+                        <strong>Tool:</strong> <span id="resultTool"></span><br>
+                        <strong>Arguments:</strong> <span id="resultArgs"></span>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">Output</div>
+                        <div class="card-body">
+                            <pre id="resultOutput" class="bg-light p-3 rounded"></pre>
+                        </div>
+                    </div>
+                    <div class="card mt-2">
+                        <div class="card-header">Errors/Warnings</div>
+                        <div class="card-body">
+                            <pre id="resultErrors" class="bg-light p-3 rounded text-danger"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">API Usage</h5>
+            </div>
+            <div class="card-body">
+                <pre><code>curl -X POST http://localhost:6991/api/run \
+    -H "Content-Type: application/json" \
+    -d '{"tool": "subfinder", "args": "-d example.com"}'</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function runTool(event) {
+    event.preventDefault();
+    
+    const tool = document.getElementById('tool').value;
+    const args = document.getElementById('args').value;
+    
+    // Create the XHR request
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/run', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    // Show loading state
+    const resultContainer = document.getElementById('resultContainer');
+    resultContainer.style.display = 'block';
+    document.getElementById('resultOutput').innerText = 'Loading...';
+    document.getElementById('resultErrors').innerText = '';
+    document.getElementById('resultTool').innerText = tool;
+    document.getElementById('resultArgs').innerText = args;
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            document.getElementById('resultOutput').innerText = response.stdout || '';
+            document.getElementById('resultErrors').innerText = response.stderr || '';
+        } else {
+            document.getElementById('resultOutput').innerText = '';
+            document.getElementById('resultErrors').innerText = 'Error: ' + xhr.statusText;
+        }
+    };
+    
+    xhr.onerror = function() {
+        document.getElementById('resultOutput').innerText = '';
+        document.getElementById('resultErrors').innerText = 'Network Error';
+    };
+    
+    // Send the request
+    xhr.send(JSON.stringify({
+        tool: tool,
+        args: args
+    }));
+}
+</script>
+{% endblock %} 

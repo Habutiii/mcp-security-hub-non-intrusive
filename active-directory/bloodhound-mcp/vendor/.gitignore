@@ -1,0 +1,5 @@
+# Keep only the audited runtime source in this vendored directory.
+*
+!.gitignore
+!BloodHound-MCP.py
+!requirements.txt

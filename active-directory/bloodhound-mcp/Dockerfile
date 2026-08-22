@@ -10,15 +10,13 @@ LABEL org.opencontainers.image.licenses="MIT"
 
 RUN apk add --no-cache \
     tini \
-    git \
     && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-# Clone BloodHound-MCP-AI
-RUN git clone --depth 1 https://github.com/MorDavid/BloodHound-MCP-AI.git /tmp/bloodhound-mcp && \
-    cp -r /tmp/bloodhound-mcp/* /app/ && \
-    rm -rf /tmp/bloodhound-mcp
+# Vendored from MorDavid/BloodHound-MCP-AI commit 1eb21b01da14fd2eda941234e3a545e876bef296.
+# The unrestricted query_bloodhound tool has been removed.
+COPY vendor/requirements.txt vendor/BloodHound-MCP.py ./
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt

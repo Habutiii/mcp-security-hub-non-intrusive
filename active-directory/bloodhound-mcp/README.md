@@ -2,11 +2,14 @@
 
 A Model Context Protocol server for [BloodHound](https://github.com/BloodHoundAD/BloodHound), the industry-standard tool for visualizing and analyzing Active Directory attack paths.
 
-> **Note**: This MCP server wraps [MorDavid/BloodHound-MCP-AI](https://github.com/MorDavid/BloodHound-MCP-AI).
+> **Note**: This MCP vendors [MorDavid/BloodHound-MCP-AI](https://github.com/MorDavid/BloodHound-MCP-AI) at commit `1eb21b01da14fd2eda941234e3a545e876bef296`.
+> Its unrestricted Cypher-query tool has been removed; the remaining tools use fixed read-only queries.
+
+Configure this MCP with a Neo4j account that has database read privileges only. The code also requests Neo4j read access for every fixed query, but database permissions are the enforcement boundary.
 
 ## Tools
 
-Provides 75+ specialized query functions based on BloodHound's Cypher queries, including:
+Provides 75+ specialized read-only query functions based on BloodHound's Cypher queries, including:
 
 | Tool | Description |
 |------|-------------|

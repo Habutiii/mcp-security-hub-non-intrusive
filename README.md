@@ -21,6 +21,17 @@ Production-ready, Dockerized MCP (Model Context Protocol) servers for offensive 
 - **Docker Compose** orchestration for multi-tool workflows
 - **CI/CD Ready** with GitHub Actions for automated builds and security scanning
 
+## Operating Policy
+
+This project supports authorized, **non-destructive** security assessment. Active reconnaissance and detection scans are allowed even when they create normal target-side audit logs. The boundary is that an MCP tool must not be able to alter the analyzed target's state or escape its intended operation.
+
+- Allowed: scoped port and service discovery, HTTP fingerprinting and crawling, DNS enumeration, read-only vulnerability checks, and local payload generation.
+- Not allowed for agent use: changing database content, writing or deleting files, creating or changing accounts, modifying configuration, deploying payloads, or executing commands on a target.
+- A tool must not expose arbitrary shell arguments, arbitrary code/script execution, or an unrestricted template/plugin selection mechanism.
+- High-risk or state-changing actions remain a human responsibility, performed outside this MCP collection after explicit authorization.
+
+See [Tool Use Principles](./TOOL-USE-PRINCIPLES.md) for the mandatory restrictions for existing and new MCP servers.
+
 ## Quick Start
 
 ```bash

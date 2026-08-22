@@ -11,27 +11,21 @@ FROM node:20-alpine
 RUN apk add --no-cache \
     ca-certificates \
     tini \
-    git \
     perl \
     perl-net-ssleay \
     perl-json \
     perl-xml-writer \
     && rm -rf /var/cache/apk/*
 
-# Clone and install Nikto
-RUN git clone --depth 1 https://github.com/sullo/nikto.git /opt/nikto && \
+# Install vendored Nikto and MCP implementation.
+WORKDIR /app
+COPY vendor/ ./
+RUN cp -a /app/nikto /opt/nikto && \
     ln -s /opt/nikto/program/nikto.pl /usr/local/bin/nikto && \
     chmod +x /opt/nikto/program/nikto.pl
 
 # Verify nikto installation
 RUN nikto -Version
-
-WORKDIR /app
-
-# Clone nikto-mcp
-RUN git clone --depth 1 https://github.com/weldpua2008/nikto-mcp.git /tmp/nikto-mcp && \
-    cp -r /tmp/nikto-mcp/* /app/ && \
-    rm -rf /tmp/nikto-mcp
 
 # Install Node.js dependencies and build
 RUN npm ci && npm run build

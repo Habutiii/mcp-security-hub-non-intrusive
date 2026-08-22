@@ -4,18 +4,11 @@
 
 FROM node:20-alpine
 
-RUN apk add --no-cache \
-    tini \
-    git \
-    docker-cli \
-    && rm -rf /var/cache/apk/*
+RUN apk add --no-cache tini && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-# Clone mcp-dnstwist
-RUN git clone --depth 1 https://github.com/BurtTheCoder/mcp-dnstwist.git /tmp/mcp-dnstwist && \
-    cp -r /tmp/mcp-dnstwist/* /app/ && \
-    rm -rf /tmp/mcp-dnstwist
+COPY vendor/ ./
 
 # Install dependencies and build
 RUN npm ci && npm run build

@@ -4,18 +4,11 @@
 
 FROM node:20-alpine
 
-RUN apk add --no-cache \
-    tini \
-    git \
-    docker-cli \
-    && rm -rf /var/cache/apk/*
+RUN apk add --no-cache tini && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-# Clone mcp-maigret
-RUN git clone --depth 1 https://github.com/BurtTheCoder/mcp-maigret.git /tmp/mcp-maigret && \
-    cp -r /tmp/mcp-maigret/* /app/ && \
-    rm -rf /tmp/mcp-maigret
+COPY vendor/ ./
 
 # Install dependencies and build
 RUN npm ci && npm run build

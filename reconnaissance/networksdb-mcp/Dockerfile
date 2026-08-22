@@ -7,12 +7,12 @@ FROM python:3.12-alpine
 RUN addgroup -g 1000 mcpuser && \
     adduser -D -u 1000 -G mcpuser mcpuser
 
-RUN apk add --no-cache git tini
+RUN apk add --no-cache tini
 
 WORKDIR /app
 
-RUN git clone --depth 1 https://github.com/MorDavid/NetworksDB-MCP.git . && \
-    pip install --no-cache-dir -r requirements.txt && \
+COPY vendor/ ./
+RUN pip install --no-cache-dir -r requirements.txt && \
     chown -R mcpuser:mcpuser /app
 
 USER mcpuser

@@ -9,11 +9,13 @@ RUN addgroup -g 1000 mcpuser && \
 
 RUN apk add --no-cache tini
 
-RUN pip install --no-cache-dir mcp-scan
+WORKDIR /app
+COPY vendor/ ./
+RUN pip install --no-cache-dir . && chown -R mcpuser:mcpuser /app
 
 USER mcpuser
 
 ENV PATH="/usr/local/bin:$PATH"
 
-ENTRYPOINT ["/sbin/tini", "--", "mcp-scan"]
+ENTRYPOINT ["/sbin/tini", "--", "snyk-agent-scan"]
 CMD ["--help"]

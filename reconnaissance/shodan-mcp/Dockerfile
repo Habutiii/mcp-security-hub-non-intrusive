@@ -8,8 +8,8 @@ RUN apk add --no-cache tini
 
 WORKDIR /home/node
 
-# Install upstream MCP server
-RUN npm install -g @burtthecoder/mcp-shodan
+COPY vendor/ ./
+RUN npm ci && npm run build && chown -R node:node /home/node
 
 # Use existing node user (non-root, uid 1000)
 USER node
@@ -21,4 +21,4 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD pgrep -f "node" > /dev/null || exit 1
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["mcp-shodan"]
+CMD ["node", "build/index.js"]

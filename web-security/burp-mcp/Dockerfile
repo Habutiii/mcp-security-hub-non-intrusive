@@ -8,14 +8,9 @@
 # Build stage - use JDK for compilation
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
-RUN apk add --no-cache git
-
 WORKDIR /app
 
-# Clone and build the MCP server
-RUN git clone --depth 1 https://github.com/PortSwigger/mcp-server.git /tmp/burp-mcp && \
-    cp -r /tmp/burp-mcp/* /app/ && \
-    rm -rf /tmp/burp-mcp
+COPY vendor/ ./
 
 # Build with Gradle
 RUN ./gradlew build -x test

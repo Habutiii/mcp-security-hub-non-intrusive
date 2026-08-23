@@ -80,75 +80,90 @@ Copy the example config to your Claude Desktop configuration:
 
 For project-level config, copy `.mcp.json` to your project root. See [examples/](./examples/) for full configuration templates with all MCPs and volume mount patterns.
 
+### Single gateway endpoint
+
+Build and run the [security-hub gateway](./gateway-mcp/) when you want one MCP
+endpoint. It advertises the registered components immediately, starts a child
+container lazily on its first call, supports prewarming without target traffic,
+and removes every child it started when the gateway exits.
+
+```powershell
+docker build -t security-hub-gateway:latest ./gateway-mcp
+docker run -i --rm -v /var/run/docker.sock:/var/run/docker.sock security-hub-gateway:latest
+```
+
+The gateway uses the Docker control socket and must remain a trusted, local-only
+process. See [gateway-mcp/README.md](./gateway-mcp/README.md) for client configuration and lifecycle tools.
+
 ## Available MCP Servers
 
 ### Reconnaissance (8 servers)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [nmap-mcp](./reconnaissance/nmap-mcp) | 8 | Port scanning, service detection, OS fingerprinting, NSE scripts |
-| [shodan-mcp](./reconnaissance/shodan-mcp) | - | Wrapper for [official Shodan MCP](https://github.com/BurtTheCoder/mcp-shodan) |
-| [pd-tools-mcp](./reconnaissance/pd-tools-mcp) | 5 | Restricted, vendored ProjectDiscovery discovery tools (subfinder, dnsx, naabu, httpx, katana) |
-| [whatweb-mcp](./reconnaissance/whatweb-mcp) | 5 | Web technology fingerprinting and CMS detection |
-| [masscan-mcp](./reconnaissance/masscan-mcp) | 6 | High-speed port scanning for large networks |
-| [zoomeye-mcp](./reconnaissance/zoomeye-mcp) | - | Wrapper for [ZoomEye MCP](https://github.com/zoomeye-ai/mcp_zoomeye) - Cyberspace search engine |
-| [networksdb-mcp](./reconnaissance/networksdb-mcp) | 4 | IP/ASN/DNS lookups via [NetworksDB](https://github.com/MorDavid/NetworksDB-MCP) |
-| [externalattacker-mcp](./reconnaissance/externalattacker-mcp) | 5 | Restricted, vendored external attack-surface discovery |
+| [nmap-mcp](./tools/reconnaissance/nmap-mcp) | 8 | Port scanning, service detection, OS fingerprinting, NSE scripts |
+| [shodan-mcp](./tools/reconnaissance/shodan-mcp) | - | Wrapper for [official Shodan MCP](https://github.com/BurtTheCoder/mcp-shodan) |
+| [pd-tools-mcp](./tools/reconnaissance/pd-tools-mcp) | 5 | Restricted, vendored ProjectDiscovery discovery tools (subfinder, dnsx, naabu, httpx, katana) |
+| [whatweb-mcp](./tools/reconnaissance/whatweb-mcp) | 5 | Web technology fingerprinting and CMS detection |
+| [masscan-mcp](./tools/reconnaissance/masscan-mcp) | 6 | High-speed port scanning for large networks |
+| [zoomeye-mcp](./tools/reconnaissance/zoomeye-mcp) | - | Wrapper for [ZoomEye MCP](https://github.com/zoomeye-ai/mcp_zoomeye) - Cyberspace search engine |
+| [networksdb-mcp](./tools/reconnaissance/networksdb-mcp) | 4 | IP/ASN/DNS lookups via [NetworksDB](https://github.com/MorDavid/NetworksDB-MCP) |
+| [externalattacker-mcp](./tools/reconnaissance/externalattacker-mcp) | 5 | Restricted, vendored external attack-surface discovery |
 
 ### Web Security (6 servers)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [sqlmap-mcp](./web-security/sqlmap-mcp) | 2 | Disabled execution; stored-result and status tools only |
-| [nikto-mcp](./web-security/nikto-mcp) | - | Wrapper for [Nikto MCP](https://github.com/weldpua2008/nikto-mcp) web server scanner |
-| [ffuf-mcp](./web-security/ffuf-mcp) | 9 | Web fuzzing for directories, files, parameters, and virtual hosts |
-| [waybackurls-mcp](./web-security/waybackurls-mcp) | 3 | Fetch historical URLs from Wayback Machine for reconnaissance |
-| [burp-mcp](./web-security/burp-mcp) | - | Wrapper for [official Burp Suite MCP](https://github.com/PortSwigger/mcp-server) |
+| [sqlmap-mcp](./tools/web-security/sqlmap-mcp) | 2 | Disabled execution; stored-result and status tools only |
+| [nikto-mcp](./tools/web-security/nikto-mcp) | - | Wrapper for [Nikto MCP](https://github.com/weldpua2008/nikto-mcp) web server scanner |
+| [ffuf-mcp](./tools/web-security/ffuf-mcp) | 9 | Web fuzzing for directories, files, parameters, and virtual hosts |
+| [waybackurls-mcp](./tools/web-security/waybackurls-mcp) | 3 | Fetch historical URLs from Wayback Machine for reconnaissance |
+| [burp-mcp](./tools/web-security/burp-mcp) | - | Wrapper for [official Burp Suite MCP](https://github.com/PortSwigger/mcp-server) |
 
 ### Secrets Detection (1 server)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [gitleaks-mcp](./secrets/gitleaks-mcp) | 5 | Find secrets and credentials in git repos and files |
+| [gitleaks-mcp](./tools/secrets/gitleaks-mcp) | 5 | Find secrets and credentials in git repos and files |
 
 ### Fuzzing (2 servers)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [boofuzz-mcp](./fuzzing/boofuzz-mcp) | 4 | Network protocol fuzzing using Boofuzz |
-| [dharma-mcp](./fuzzing/dharma-mcp) | 2 | Grammar-based test case generation |
+| [boofuzz-mcp](./tools/fuzzing/boofuzz-mcp) | 4 | Network protocol fuzzing using Boofuzz |
+| [dharma-mcp](./tools/fuzzing/dharma-mcp) | 2 | Grammar-based test case generation |
 
 ### OSINT (2 servers)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [maigret-mcp](./osint/maigret-mcp) | - | Wrapper for [mcp-maigret](https://github.com/BurtTheCoder/mcp-maigret) - Username OSINT across 2500+ sites |
-| [dnstwist-mcp](./osint/dnstwist-mcp) | - | Wrapper for [mcp-dnstwist](https://github.com/BurtTheCoder/mcp-dnstwist) - Typosquatting/phishing detection |
+| [maigret-mcp](./tools/osint/maigret-mcp) | - | Wrapper for [mcp-maigret](https://github.com/BurtTheCoder/mcp-maigret) - Username OSINT across 2500+ sites |
+| [dnstwist-mcp](./tools/osint/dnstwist-mcp) | - | Wrapper for [mcp-dnstwist](https://github.com/BurtTheCoder/mcp-dnstwist) - Typosquatting/phishing detection |
 
 ### Threat Intelligence (2 servers)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [virustotal-mcp](./threat-intel/virustotal-mcp) | - | Wrapper for [mcp-virustotal](https://github.com/BurtTheCoder/mcp-virustotal) - Malware analysis and threat intel |
-| [otx-mcp](./threat-intel/otx-mcp) | - | Wrapper for [OTX MCP](https://github.com/mrwadams/otx-mcp) - AlienVault Open Threat Exchange |
+| [virustotal-mcp](./tools/threat-intel/virustotal-mcp) | - | Wrapper for [mcp-virustotal](https://github.com/BurtTheCoder/mcp-virustotal) - Malware analysis and threat intel |
+| [otx-mcp](./tools/threat-intel/otx-mcp) | - | Wrapper for [OTX MCP](https://github.com/mrwadams/otx-mcp) - AlienVault Open Threat Exchange |
 
 ### Active Directory (1 server)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [bloodhound-mcp](./active-directory/bloodhound-mcp) | 75+ | Wrapper for [BloodHound-MCP-AI](https://github.com/MorDavid/BloodHound-MCP-AI) - AD attack path analysis |
+| [bloodhound-mcp](./tools/active-directory/bloodhound-mcp) | 75+ | Wrapper for [BloodHound-MCP-AI](https://github.com/MorDavid/BloodHound-MCP-AI) - AD attack path analysis |
 
 ### Password Cracking (1 server)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [hashcat-mcp](./password-cracking/hashcat-mcp) | 1 | Dictionary-only, authorized password recovery using a runtime-downloaded SecLists wordlist |
+| [hashcat-mcp](./tools/password-cracking/hashcat-mcp) | 1 | Dictionary-only, authorized password recovery using a runtime-downloaded SecLists wordlist |
 
 ### Meta (1 server)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [mcp-scan](./meta/mcp-scan) | - | Wrapper for [mcp-scan](https://github.com/invariantlabs-ai/mcp-scan) - Scan MCP servers for vulnerabilities |
+| [mcp-scan](./tools/meta/mcp-scan) | - | Wrapper for [mcp-scan](https://github.com/invariantlabs-ai/mcp-scan) - Scan MCP servers for vulnerabilities |
 
 ## Usage Examples
 
@@ -195,50 +210,26 @@ All containers implement defense-in-depth:
 
 ## Project Structure
 
-```
+```text
 mcp-security-hub/
-├── reconnaissance/
-│   ├── nmap-mcp/           # Port scanning
-│   ├── shodan-mcp/         # Internet device search (wrapper)
-│   ├── pd-tools-mcp/       # ProjectDiscovery tools (wrapper)
-│   ├── whatweb-mcp/        # Web fingerprinting
-│   ├── masscan-mcp/        # High-speed scanning
-│   ├── zoomeye-mcp/        # Cyberspace search (wrapper)
-│   ├── networksdb-mcp/     # IP/ASN/DNS lookups
-│   └── externalattacker-mcp/ # Attack surface mapping
-├── web-security/
-│   ├── sqlmap-mcp/         # SQL injection
-│   ├── nikto-mcp/          # Web server scanning (wrapper)
-│   ├── ffuf-mcp/           # Web fuzzing
-│   └── burp-mcp/           # Burp Suite (wrapper)
-├── secrets/
-│   └── gitleaks-mcp/       # Secrets detection
-├── fuzzing/
-│   ├── boofuzz-mcp/        # Network protocol fuzzing using Boofuzz
-│   └── dharma-mcp/         # Grammar-based test case generation
-├── osint/
-│   ├── maigret-mcp/        # Username OSINT (wrapper)
-│   └── dnstwist-mcp/       # Typosquatting detection (wrapper)
-├── threat-intel/
-│   ├── virustotal-mcp/     # Malware analysis (wrapper)
-│   └── otx-mcp/            # AlienVault OTX (wrapper)
-├── active-directory/
-│   └── bloodhound-mcp/     # AD attack paths (wrapper)
-├── password-cracking/
-│   └── hashcat-mcp/        # Hash cracking (wrapper)
-├── meta/
-│   └── mcp-scan/           # MCP security scanning
-├── scripts/
-│   ├── setup.sh            # Quick setup
-│   └── healthcheck.sh      # Health verification
-├── tests/
-│   └── test_mcp_servers.py # Unit tests
-├── docker-compose.yml      # Orchestration
-└── .github/workflows/      # CI/CD
++-- tools/
+|   +-- reconnaissance/       # nmap, shodan, pd-tools, whatweb, masscan, zoomeye, networksdb, externalattacker
+|   +-- web-security/         # sqlmap, nikto, ffuf, waybackurls, burp
+|   +-- secrets/              # gitleaks
+|   +-- fuzzing/              # boofuzz, dharma
+|   +-- osint/                # maigret, dnstwist
+|   +-- threat-intel/         # virustotal, otx
+|   +-- active-directory/     # bloodhound
+|   +-- password-cracking/    # hashcat
+|   +-- meta/                 # mcp-scan
++-- gateway-mcp/              # single-endpoint lazy Docker gateway
++-- scripts/                  # setup, health, and test scripts
++-- tests/                    # unit and gateway contract tests
++-- docker-compose.yml        # image builds and service definitions
+`-- .github/workflows/        # CI/CD
 ```
 
 ## Testing
-
 ```bash
 # Run unit tests
 pytest tests/ -v

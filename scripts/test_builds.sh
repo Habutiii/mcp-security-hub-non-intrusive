@@ -18,37 +18,37 @@ fi
 
 MCPS=(
     # Reconnaissance
-    "reconnaissance/nmap-mcp"
-    "reconnaissance/shodan-mcp"
-    "reconnaissance/pd-tools-mcp"
-    "reconnaissance/whatweb-mcp"
-    "reconnaissance/masscan-mcp"
-    "reconnaissance/zoomeye-mcp"
-    "reconnaissance/networksdb-mcp"
-    "reconnaissance/externalattacker-mcp"
+    "tools/reconnaissance/nmap-mcp"
+    "tools/reconnaissance/shodan-mcp"
+    "tools/reconnaissance/pd-tools-mcp"
+    "tools/reconnaissance/whatweb-mcp"
+    "tools/reconnaissance/masscan-mcp"
+    "tools/reconnaissance/zoomeye-mcp"
+    "tools/reconnaissance/networksdb-mcp"
+    "tools/reconnaissance/externalattacker-mcp"
     # Web Security
-    "web-security/sqlmap-mcp"
-    "web-security/nikto-mcp"
-    "web-security/ffuf-mcp"
-    "web-security/waybackurls-mcp"
-    "web-security/burp-mcp"
+    "tools/web-security/sqlmap-mcp"
+    "tools/web-security/nikto-mcp"
+    "tools/web-security/ffuf-mcp"
+    "tools/web-security/waybackurls-mcp"
+    "tools/web-security/burp-mcp"
     # Secrets Detection
-    "secrets/gitleaks-mcp"
+    "tools/secrets/gitleaks-mcp"
     # Fuzzing
-    "fuzzing/boofuzz-mcp"
-    "fuzzing/dharma-mcp"
+    "tools/fuzzing/boofuzz-mcp"
+    "tools/fuzzing/dharma-mcp"
     # OSINT
-    "osint/maigret-mcp"
-    "osint/dnstwist-mcp"
+    "tools/osint/maigret-mcp"
+    "tools/osint/dnstwist-mcp"
     # Threat Intelligence
-    "threat-intel/virustotal-mcp"
-    "threat-intel/otx-mcp"
+    "tools/threat-intel/virustotal-mcp"
+    "tools/threat-intel/otx-mcp"
     # Active Directory
-    "active-directory/bloodhound-mcp"
+    "tools/active-directory/bloodhound-mcp"
     # Password Cracking
-    "password-cracking/hashcat-mcp"
+    "tools/password-cracking/hashcat-mcp"
     # Meta
-    "meta/mcp-scan"
+    "tools/meta/mcp-scan"
 )
 
 PASSED=0

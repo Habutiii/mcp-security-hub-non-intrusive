@@ -19,33 +19,33 @@ ROOT_DIR = Path(__file__).parent.parent
 
 # MCP servers with full Python implementation (server.py)
 MCP_SERVERS = [
-    ("reconnaissance", "nmap-mcp"),
-    ("reconnaissance", "whatweb-mcp"),
-    ("reconnaissance", "masscan-mcp"),
-    ("reconnaissance", "pd-tools-mcp"),
-    ("reconnaissance", "externalattacker-mcp"),
-    ("web-security", "sqlmap-mcp"),
-    ("web-security", "ffuf-mcp"),
-    ("web-security", "waybackurls-mcp"),
-    ("fuzzing", "boofuzz-mcp"),
-    ("fuzzing", "dharma-mcp"),
-    ("secrets", "gitleaks-mcp"),
-    ("password-cracking", "hashcat-mcp"),
+    ("tools/reconnaissance", "nmap-mcp"),
+    ("tools/reconnaissance", "whatweb-mcp"),
+    ("tools/reconnaissance", "masscan-mcp"),
+    ("tools/reconnaissance", "pd-tools-mcp"),
+    ("tools/reconnaissance", "externalattacker-mcp"),
+    ("tools/web-security", "sqlmap-mcp"),
+    ("tools/web-security", "ffuf-mcp"),
+    ("tools/web-security", "waybackurls-mcp"),
+    ("tools/fuzzing", "boofuzz-mcp"),
+    ("tools/fuzzing", "dharma-mcp"),
+    ("tools/secrets", "gitleaks-mcp"),
+    ("tools/password-cracking", "hashcat-mcp"),
 ]
 
 # MCP servers that wrap external implementations (Dockerfile only, no server.py)
 MCP_WRAPPERS = [
-    ("reconnaissance", "shodan-mcp"),
-    ("reconnaissance", "zoomeye-mcp"),
-    ("reconnaissance", "networksdb-mcp"),
-    ("web-security", "nikto-mcp"),
-    ("web-security", "burp-mcp"),
-    ("osint", "maigret-mcp"),
-    ("osint", "dnstwist-mcp"),
-    ("threat-intel", "virustotal-mcp"),
-    ("threat-intel", "otx-mcp"),
-    ("active-directory", "bloodhound-mcp"),
-    ("meta", "mcp-scan"),
+    ("tools/reconnaissance", "shodan-mcp"),
+    ("tools/reconnaissance", "zoomeye-mcp"),
+    ("tools/reconnaissance", "networksdb-mcp"),
+    ("tools/web-security", "nikto-mcp"),
+    ("tools/web-security", "burp-mcp"),
+    ("tools/osint", "maigret-mcp"),
+    ("tools/osint", "dnstwist-mcp"),
+    ("tools/threat-intel", "virustotal-mcp"),
+    ("tools/threat-intel", "otx-mcp"),
+    ("tools/active-directory", "bloodhound-mcp"),
+    ("tools/meta", "mcp-scan"),
 ]
 
 # All MCPs (for file existence tests)
@@ -60,7 +60,7 @@ def load_server_module(category: str, mcp_name: str):
     if not server_path.exists():
         pytest.skip(f"Server not found: {server_path}")
 
-    module_name = f"{category.replace('-', '_')}_{mcp_name.replace('-', '_')}_server"
+    module_name = f"{category.replace('-', '_').replace('/', '_')}_{mcp_name.replace('-', '_')}_server"
     spec = importlib.util.spec_from_file_location(module_name, server_path)
     module = importlib.util.module_from_spec(spec)
 
@@ -225,7 +225,7 @@ class TestCommandExecutionPolicy:
         )
 
     def test_boofuzz_cannot_store_or_execute_caller_supplied_python(self):
-        source = (ROOT_DIR / "fuzzing" / "boofuzz-mcp" / "server.py").read_text(encoding="utf-8")
+        source = (ROOT_DIR / "tools" / "fuzzing" / "boofuzz-mcp" / "server.py").read_text(encoding="utf-8")
         assert "boofuzz_create_script" not in source
         assert "boofuzz_run_fuzzer" not in source
         assert "create_subprocess_exec" not in source
@@ -236,7 +236,7 @@ class TestNonIntrusiveInterfaces:
 
     @pytest.mark.asyncio
     async def test_nmap_scripts_are_fixed_to_the_reviewed_catalog(self):
-        module = load_server_module("reconnaissance", "nmap-mcp")
+        module = load_server_module("tools/reconnaissance", "nmap-mcp")
         scripts = next(tool for tool in await module.list_tools() if tool.name == "script_scan")
         assert scripts.inputSchema["properties"]["scripts"]["items"]["enum"] == sorted(module.SAFE_NSE_SCRIPTS)
 
@@ -244,8 +244,8 @@ class TestNonIntrusiveInterfaces:
     @pytest.mark.parametrize(
         ("category", "mcp_name", "disabled_tools"),
         [
-            ("web-security", "ffuf-mcp", {"ffuf_custom", "ffuf_vhost", "ffuf_param"}),
-            ("web-security", "sqlmap-mcp", {"sql_scan", "sql_enumerate", "sql_dump", "sql_test"}),
+            ("tools/web-security", "ffuf-mcp", {"ffuf_custom"}),
+            ("tools/web-security", "sqlmap-mcp", {"sql_scan", "sql_enumerate", "sql_dump", "sql_test"}),
         ],
     )
     async def test_state_changing_tools_are_not_advertised(

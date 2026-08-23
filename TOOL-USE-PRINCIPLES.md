@@ -52,6 +52,31 @@ The following classes are human-only, even in an authorized engagement:
 - High-rate scanning or broad scans that could affect availability.
 - Any action whose target-side effect cannot be proven non-mutating.
 
+## Gateway lifecycle and resource management
+
+When these MCPs are exposed through the security-hub gateway, the gateway is
+the only long-lived process. Individual tool MCP containers follow a
+least-lifetime policy:
+
+- **Lazy start by default:** start a child MCP container only when the gateway
+  receives its first tool call. Starting a container is not permission to scan;
+  it must not send target traffic until its specific tool is called.
+- **Agent prewarming is allowed:** an agent may ask the gateway to start an
+  already-approved MCP in advance when it reasonably expects to use it later.
+  Prewarming prepares local resources only and must not invoke a scanner,
+  perform a lookup, or contact a target.
+- **Reuse while needed:** reuse a started container for related calls in the
+  same gateway session so that in-memory results remain available.
+- **Graceful idle shutdown:** an agent may ask the gateway to stop an idle MCP
+  after it is no longer needed to release CPU and memory. The gateway must not
+  stop a container with an active scan, fetch, or local analysis job.
+- **Session cleanup:** when the gateway exits, it must gracefully stop and
+  remove every child MCP container it started. A bounded timeout may be used
+  before forced termination, and `--rm` must remove the stopped container.
+- **Fixed registry only:** prewarming and shutdown accept only registered MCP
+  identifiers. They must not accept Docker image names, container IDs, shell
+  commands, or arbitrary Docker arguments from the agent.
+
 ## Review checklist for new tools
 
 Before adding or updating an MCP server, verify:
@@ -62,5 +87,7 @@ Before adding or updating an MCP server, verify:
 4. Active traffic is rate-limited, scoped, timed out, and concurrency-limited.
 5. The implementation and its upstream dependency are reviewed and pinned or vendored.
 6. Tests cover input validation and rejection of state-changing or command-execution escape hatches.
+7. Gateway-managed containers have tests for lazy start, prewarm without target
+   traffic, idle-only shutdown, and complete session cleanup.
 
 If any answer is uncertain, the capability is human-only until it has been redesigned and reviewed.

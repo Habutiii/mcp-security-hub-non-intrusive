@@ -59,9 +59,9 @@ get_service_port() {
 get_service_dir() {
     local service="$1"
     case "${service}" in
-        nmap-mcp)       echo "reconnaissance/nmap-mcp" ;;
-        shodan-mcp)     echo "reconnaissance/shodan-mcp" ;;
-        sqlmap-mcp)     echo "web-security/sqlmap-mcp" ;;
+        nmap-mcp)       echo "tools/reconnaissance/nmap-mcp" ;;
+        shodan-mcp)     echo "tools/reconnaissance/shodan-mcp" ;;
+        sqlmap-mcp)     echo "tools/web-security/sqlmap-mcp" ;;
         metasploit-mcp) echo "exploitation/metasploit-mcp" ;;
         mobsf-mcp)      echo "mobile-security/mobsf-mcp" ;;
         *)              echo "" ;;

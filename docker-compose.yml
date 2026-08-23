@@ -20,7 +20,7 @@ services:
   # ===========================================================================
   nmap-mcp:
     build:
-      context: ./reconnaissance/nmap-mcp
+      context: ./tools/reconnaissance/nmap-mcp
       dockerfile: Dockerfile
     image: nmap-mcp:latest
     container_name: nmap-mcp
@@ -47,7 +47,7 @@ services:
 
   shodan-mcp:
     build:
-      context: ./reconnaissance/shodan-mcp
+      context: ./tools/reconnaissance/shodan-mcp
       dockerfile: Dockerfile
     image: shodan-mcp:latest
     container_name: shodan-mcp
@@ -73,7 +73,7 @@ services:
 
   pd-tools-mcp:
     build:
-      context: ./reconnaissance/pd-tools-mcp
+      context: ./tools/reconnaissance/pd-tools-mcp
       dockerfile: Dockerfile
     image: pd-tools-mcp:latest
     container_name: pd-tools-mcp
@@ -97,7 +97,7 @@ services:
 
   whatweb-mcp:
     build:
-      context: ./reconnaissance/whatweb-mcp
+      context: ./tools/reconnaissance/whatweb-mcp
       dockerfile: Dockerfile
     image: whatweb-mcp:latest
     container_name: whatweb-mcp
@@ -123,7 +123,7 @@ services:
 
   masscan-mcp:
     build:
-      context: ./reconnaissance/masscan-mcp
+      context: ./tools/reconnaissance/masscan-mcp
       dockerfile: Dockerfile
     image: masscan-mcp:latest
     container_name: masscan-mcp
@@ -152,7 +152,7 @@ services:
 
   zoomeye-mcp:
     build:
-      context: ./reconnaissance/zoomeye-mcp
+      context: ./tools/reconnaissance/zoomeye-mcp
       dockerfile: Dockerfile
     image: zoomeye-mcp:latest
     container_name: zoomeye-mcp
@@ -178,7 +178,7 @@ services:
   # ===========================================================================
   sqlmap-mcp:
     build:
-      context: ./web-security/sqlmap-mcp
+      context: ./tools/web-security/sqlmap-mcp
       dockerfile: Dockerfile
     image: sqlmap-mcp:latest
     container_name: sqlmap-mcp
@@ -203,7 +203,7 @@ services:
 
   nikto-mcp:
     build:
-      context: ./web-security/nikto-mcp
+      context: ./tools/web-security/nikto-mcp
       dockerfile: Dockerfile
     image: nikto-mcp:latest
     container_name: nikto-mcp
@@ -229,7 +229,7 @@ services:
 
   ffuf-mcp:
     build:
-      context: ./web-security/ffuf-mcp
+      context: ./tools/web-security/ffuf-mcp
       dockerfile: Dockerfile
     image: ffuf-mcp:latest
     container_name: ffuf-mcp
@@ -257,7 +257,7 @@ services:
 
   waybackurls-mcp:
     build:
-      context: ./web-security/waybackurls-mcp
+      context: ./tools/web-security/waybackurls-mcp
       dockerfile: Dockerfile
     image: waybackurls-mcp:latest
     container_name: waybackurls-mcp
@@ -286,7 +286,7 @@ services:
   # ===========================================================================
   dharma-mcp:
     build:
-      context: ./fuzzing/dharma-mcp
+      context: ./tools/fuzzing/dharma-mcp
       dockerfile: Dockerfile
     image: dharma-mcp:latest
     container_name: dharma-mcp
@@ -313,7 +313,7 @@ services:
   
   boofuzz-mcp:
     build:
-      context: ./fuzzing/boofuzz-mcp
+      context: ./tools/fuzzing/boofuzz-mcp
       dockerfile: Dockerfile
     image: boofuzz-mcp:latest
     container_name: boofuzz-mcp
@@ -346,7 +346,7 @@ services:
   # ===========================================================================
   gitleaks-mcp:
     build:
-      context: ./secrets/gitleaks-mcp
+      context: ./tools/secrets/gitleaks-mcp
       dockerfile: Dockerfile
     image: gitleaks-mcp:latest
     container_name: gitleaks-mcp
@@ -375,7 +375,7 @@ services:
   # ===========================================================================
   otx-mcp:
     build:
-      context: ./threat-intel/otx-mcp
+      context: ./tools/threat-intel/otx-mcp
       dockerfile: Dockerfile
     image: otx-mcp:latest
     container_name: otx-mcp
@@ -401,7 +401,7 @@ services:
   # ===========================================================================
   networksdb-mcp:
     build:
-      context: ./reconnaissance/networksdb-mcp
+      context: ./tools/reconnaissance/networksdb-mcp
       dockerfile: Dockerfile
     image: networksdb-mcp:latest
     container_name: networksdb-mcp
@@ -424,7 +424,7 @@ services:
 
   externalattacker-mcp:
     build:
-      context: ./reconnaissance/externalattacker-mcp
+      context: ./tools/reconnaissance/externalattacker-mcp
       dockerfile: Dockerfile
     image: externalattacker-mcp:latest
     container_name: externalattacker-mcp
@@ -448,7 +448,7 @@ services:
   # ===========================================================================
   mcp-scan:
     build:
-      context: ./meta/mcp-scan
+      context: ./tools/meta/mcp-scan
       dockerfile: Dockerfile
     image: mcp-scan:latest
     container_name: mcp-scan
@@ -472,7 +472,7 @@ services:
   # ===========================================================================
   burp-mcp:
     build:
-      context: ./web-security/burp-mcp
+      context: ./tools/web-security/burp-mcp
       dockerfile: Dockerfile
     image: burp-mcp:latest
     container_name: burp-mcp
@@ -496,7 +496,7 @@ services:
   # ===========================================================================
   maigret-mcp:
     build:
-      context: ./osint/maigret-mcp
+      context: ./tools/osint/maigret-mcp
       dockerfile: Dockerfile
     image: maigret-mcp:latest
     container_name: maigret-mcp
@@ -517,7 +517,7 @@ services:
 
   dnstwist-mcp:
     build:
-      context: ./osint/dnstwist-mcp
+      context: ./tools/osint/dnstwist-mcp
       dockerfile: Dockerfile
     image: dnstwist-mcp:latest
     container_name: dnstwist-mcp
@@ -541,7 +541,7 @@ services:
   # ===========================================================================
   virustotal-mcp:
     build:
-      context: ./threat-intel/virustotal-mcp
+      context: ./tools/threat-intel/virustotal-mcp
       dockerfile: Dockerfile
     image: virustotal-mcp:latest
     container_name: virustotal-mcp
@@ -567,7 +567,7 @@ services:
   # ===========================================================================
   bloodhound-mcp:
     build:
-      context: ./active-directory/bloodhound-mcp
+      context: ./tools/active-directory/bloodhound-mcp
       dockerfile: Dockerfile
     image: bloodhound-mcp:latest
     container_name: bloodhound-mcp
@@ -591,7 +591,7 @@ services:
   # ===========================================================================
   hashcat-mcp:
     build:
-      context: ./password-cracking/hashcat-mcp
+      context: ./tools/password-cracking/hashcat-mcp
       dockerfile: Dockerfile
     image: hashcat-mcp:latest
     container_name: hashcat-mcp

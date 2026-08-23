@@ -76,6 +76,7 @@ class ScanResult(BaseModel):
 # In-memory storage for scan results
 scan_results: dict[str, ScanResult] = {}
 active_scans: set[str] = set()
+SAFE_SQLMAP_TOOLS = frozenset({"get_scan_results", "list_active_scans"})
 
 
 def parse_sqlmap_output(output: str) -> dict[str, Any]:
@@ -288,7 +289,7 @@ app = Server("sqlmap-mcp")
 @app.list_tools()
 async def list_tools() -> list[Tool]:
     """List available tools."""
-    return [
+    tools = [
         Tool(
             name="sql_scan",
             description="Scan a URL for SQL injection vulnerabilities. "
@@ -449,12 +450,15 @@ async def list_tools() -> list[Tool]:
             },
         ),
     ]
+    return [tool for tool in tools if tool.name in SAFE_SQLMAP_TOOLS]
 
 
 @app.call_tool()
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Handle tool calls."""
     try:
+        if name not in SAFE_SQLMAP_TOOLS:
+            return [TextContent(type="text", text="SQLMap execution is disabled: this server does not expose injection, enumeration, or data extraction actions.")]
         if name == "sql_scan":
             if len(active_scans) >= settings.max_concurrent_scans:
                 return [

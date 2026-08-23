@@ -1,15 +1,11 @@
-# SQLMap MCP Server
+# SQLMap MCP Server (Execution Disabled)
 
-SQL injection detection and exploitation MCP server using [SQLMap](https://sqlmap.org/).
+SQLMap execution is deliberately disabled by this repository's non-intrusive policy.
 
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| `sql_scan` | Scan URL for SQL injection vulnerabilities |
-| `sql_enumerate` | Enumerate databases, tables, columns |
-| `sql_dump` | Dump data from database tables |
-| `sql_test` | Quick injection test for a parameter |
 | `get_scan_results` | Retrieve previous results |
 | `list_active_scans` | Show running scans |
 
@@ -45,26 +41,10 @@ docker run -it --rm sqlmap-mcp
 | `SQLMAP_LEVEL` | `1` | Default test level (1-5) |
 | `SQLMAP_RISK` | `1` | Default risk level (1-3) |
 
-## Examples
-
-### Basic Scan
-```
-Scan http://example.com/page?id=1 for SQL injection
-```
-
-### Enumerate Databases
-```
-List databases on http://example.com/page?id=1
-```
-
-### Dump Table
-```
-Dump the users table from the main database
-```
-
 ## Security Notice
 
-**For authorized testing only.** SQL injection testing should only be performed on systems you own or have explicit permission to test.
+Injection testing, database enumeration, and data extraction are not callable.
+This MCP only exposes stored-result and status operations.
 
 ## License
 

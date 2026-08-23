@@ -7,7 +7,6 @@
 #   ./scripts/run-tests.sh --unit             # Run only unit tests
 #   ./scripts/run-tests.sh --integration      # Run only integration tests
 #   ./scripts/run-tests.sh --container        # Run only container structure tests
-#   ./scripts/run-tests.sh --service nuclei-mcp   # Test specific service
 #   ./scripts/run-tests.sh --no-build         # Skip Docker build step
 #
 # Exit codes:
@@ -37,9 +36,9 @@ HEALTH_CHECK_TIMEOUT=60
 HEALTH_CHECK_INTERVAL=5
 
 # Services to test (add more as they are implemented)
-AVAILABLE_SERVICES="nuclei-mcp"
+AVAILABLE_SERVICES=""
 # Uncomment as services are implemented:
-# AVAILABLE_SERVICES="nuclei-mcp nmap-mcp shodan-mcp sqlmap-mcp metasploit-mcp mobsf-mcp"
+# AVAILABLE_SERVICES="nmap-mcp shodan-mcp sqlmap-mcp"
 
 # =============================================================================
 # Service Configuration Functions (portable alternative to associative arrays)
@@ -48,7 +47,6 @@ AVAILABLE_SERVICES="nuclei-mcp"
 get_service_port() {
     local service="$1"
     case "${service}" in
-        nuclei-mcp)     echo 3003 ;;
         nmap-mcp)       echo 3001 ;;
         shodan-mcp)     echo 3002 ;;
         sqlmap-mcp)     echo 3004 ;;
@@ -61,7 +59,6 @@ get_service_port() {
 get_service_dir() {
     local service="$1"
     case "${service}" in
-        nuclei-mcp)     echo "web-security/nuclei-mcp" ;;
         nmap-mcp)       echo "reconnaissance/nmap-mcp" ;;
         shodan-mcp)     echo "reconnaissance/shodan-mcp" ;;
         sqlmap-mcp)     echo "web-security/sqlmap-mcp" ;;
@@ -258,9 +255,6 @@ run_integration_tests() {
 
     # Service-specific integration tests
     case "${service}" in
-        nuclei-mcp)
-            run_nuclei_integration_tests "${service}"
-            ;;
         nmap-mcp)
             run_nmap_integration_tests "${service}"
             ;;

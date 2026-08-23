@@ -76,6 +76,15 @@ class ScanResult(BaseModel):
 scan_results: dict[str, ScanResult] = {}
 active_scans: set[str] = set()
 
+# Reviewed information-gathering scripts only.  Do not replace this with a
+# category (such as "default" or "vuln"), because categories can include
+# state-changing scripts as Nmap evolves.
+SAFE_NSE_SCRIPTS = frozenset({
+    "banner", "dns-brute", "dns-recursion", "http-headers", "http-methods",
+    "http-robots.txt", "http-server-header", "http-title", "ssh-hostkey",
+    "ssl-cert", "ssl-enum-ciphers", "ssl-known-key", "ssl-date",
+})
+
 
 def parse_nmap_xml(xml_path: Path) -> dict[str, Any]:
     """Parse nmap XML output into structured data."""
@@ -218,7 +227,6 @@ async def run_nmap_scan(
     elif scan_type == "os":
         cmd.append("-O")
     elif scan_type == "script":
-        cmd.append("-sC")  # Default scripts
         if scripts:
             cmd.extend(["--script", ",".join(scripts)])
     elif scan_type == "quick":
@@ -229,7 +237,7 @@ async def run_nmap_scan(
         cmd.extend(["-p", ports])
 
     # Add target
-    cmd.append(target)
+    cmd.extend(["--", target])
 
     logger.info(f"Starting {scan_type} scan {scan_id} for target: {target}")
     logger.debug(f"Command: {' '.join(cmd)}")
@@ -417,8 +425,8 @@ async def list_tools() -> list[Tool]:
                     },
                     "scripts": {
                         "type": "array",
-                        "items": {"type": "string"},
-                        "description": "Script names to run (e.g., 'http-title', 'ssl-cert', 'vuln')",
+                        "items": {"type": "string", "enum": sorted(SAFE_NSE_SCRIPTS)},
+                        "description": "Reviewed read-only NSE scripts.",
                     },
                     "ports": {
                         "type": "string",
@@ -559,10 +567,14 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
+            scripts = arguments.get("scripts", [])
+            if not scripts or not set(scripts).issubset(SAFE_NSE_SCRIPTS):
+                return [TextContent(type="text", text="Choose one or more reviewed read-only NSE scripts.")]
+
             result = await run_nmap_scan(
                 target=arguments["target"],
                 scan_type="script",
-                scripts=arguments.get("scripts"),
+                scripts=scripts,
                 ports=arguments.get("ports"),
                 timeout=arguments.get("timeout"),
             )

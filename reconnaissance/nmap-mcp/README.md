@@ -9,7 +9,7 @@ Network reconnaissance MCP server using [Nmap](https://nmap.org/).
 | `port_scan` | Discover open ports on target |
 | `service_scan` | Detect service versions |
 | `os_detection` | Fingerprint operating system |
-| `script_scan` | Run NSE scripts |
+| `script_scan` | Run only reviewed information-gathering NSE scripts |
 | `quick_scan` | Fast scan of common ports |
 | `get_scan_results` | Retrieve previous results |
 | `list_active_scans` | Show running scans |
@@ -67,6 +67,12 @@ Run http-title and ssl-cert scripts on example.com
 ```
 
 ## Capabilities
+
+`script_scan` only accepts this fixed catalog: `banner`, `dns-brute`,
+`dns-recursion`, `http-headers`, `http-methods`, `http-robots.txt`,
+`http-server-header`, `http-title`, `ssh-hostkey`, `ssl-cert`, `ssl-date`,
+`ssl-enum-ciphers`, and `ssl-known-key`. NSE categories and arbitrary scripts
+are not exposed.
 
 The container requires `NET_RAW` and `NET_ADMIN` capabilities for:
 - SYN scanning (half-open scan)

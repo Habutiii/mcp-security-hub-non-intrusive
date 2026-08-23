@@ -18,6 +18,7 @@ Tools:
 import asyncio
 import json
 import logging
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -90,6 +91,7 @@ class ScanResult(BaseModel):
 # In-memory storage for scan results
 scan_results: dict[str, ScanResult] = {}
 active_scans: set[str] = set()
+SAFE_FFUF_TOOLS = frozenset({"ffuf_dir", "ffuf_vhost", "ffuf_param", "get_fuzz_results", "list_active_scans", "list_wordlists"})
 
 # Common wordlists
 WORDLISTS = {
@@ -101,6 +103,7 @@ WORDLISTS = {
     "subdomains-top1mil": "/app/wordlists/seclists/Discovery/DNS/subdomains-top1million-5000.txt",
     "params-top": "/app/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt",
 }
+SAFE_EXTENSIONS = frozenset({"asp", "aspx", "html", "htm", "js", "json", "php", "txt", "xml"})
 
 
 def parse_ffuf_json(output: str) -> list[FuzzResult]:
@@ -128,14 +131,10 @@ def parse_ffuf_json(output: str) -> list[FuzzResult]:
 
 
 def get_wordlist_path(wordlist: str) -> str:
-    """Get full path for a wordlist."""
-    if wordlist in WORDLISTS:
-        return WORDLISTS[wordlist]
-    elif Path(wordlist).exists():
-        return wordlist
-    elif Path(settings.wordlists_dir, wordlist).exists():
-        return str(Path(settings.wordlists_dir, wordlist))
-    return wordlist
+    """Return a reviewed, container-owned wordlist path."""
+    if wordlist not in WORDLISTS:
+        raise ValueError("wordlist must be one of the documented wordlist names")
+    return WORDLISTS[wordlist]
 
 
 async def run_ffuf(
@@ -150,11 +149,9 @@ async def run_ffuf(
     threads: int | None = None,
     rate: int | None = None,
     timeout: int | None = None,
-    headers: dict[str, str] | None = None,
-    method: str = "GET",
-    data: str | None = None,
+    vhost_domain: str | None = None,
 ) -> ScanResult:
-    """Execute ffuf fuzzing asynchronously."""
+    """Execute bounded GET-only ffuf discovery asynchronously."""
     scan_id = str(uuid.uuid4())[:8]
     output_file = Path(settings.output_dir) / f"ffuf_{scan_id}.json"
 
@@ -201,18 +198,8 @@ async def run_ffuf(
     if filter_words is not None:
         cmd.extend(["-fw", str(filter_words)])
 
-    # Add HTTP method
-    if method.upper() != "GET":
-        cmd.extend(["-X", method.upper()])
-
-    # Add POST data
-    if data:
-        cmd.extend(["-d", data])
-
-    # Add custom headers
-    if headers:
-        for key, value in headers.items():
-            cmd.extend(["-H", f"{key}: {value}"])
+    if vhost_domain:
+        cmd.extend(["-H", f"Host: FUZZ.{vhost_domain}"])
 
     logger.info(f"Starting {fuzz_type} fuzzing {scan_id} for target: {url}")
     logger.debug(f"Command: {' '.join(cmd)}")
@@ -309,7 +296,7 @@ app = Server("ffuf-mcp")
 @app.list_tools()
 async def list_tools() -> list[Tool]:
     """List available tools."""
-    return [
+    tools = [
         Tool(
             name="ffuf_dir",
             description="Directory and file discovery fuzzing. "
@@ -323,13 +310,14 @@ async def list_tools() -> list[Tool]:
                     },
                     "wordlist": {
                         "type": "string",
-                        "description": "Wordlist to use (common, dirb-common, dirbuster-medium, raft-large-dirs, or path)",
+                        "enum": sorted(WORDLISTS),
+                        "description": "Reviewed, container-owned wordlist.",
                         "default": "common",
                     },
                     "extensions": {
                         "type": "array",
-                        "items": {"type": "string"},
-                        "description": "File extensions to append (e.g., php, html, txt)",
+                        "items": {"type": "string", "enum": sorted(SAFE_EXTENSIONS)},
+                        "description": "Reviewed file extensions to append.",
                     },
                     "filter_codes": {
                         "type": "array",
@@ -527,12 +515,22 @@ async def list_tools() -> list[Tool]:
             },
         ),
     ]
+    for tool in tools:
+        if tool.name in {"ffuf_dir", "ffuf_vhost", "ffuf_param"}:
+            tool.inputSchema["properties"]["wordlist"]["enum"] = sorted(WORDLISTS)
+        if tool.name == "ffuf_param":
+            tool.inputSchema["properties"].pop("method", None)
+            tool.inputSchema["properties"].pop("data", None)
+            tool.description = "GET parameter-name discovery only."
+    return [tool for tool in tools if tool.name in SAFE_FFUF_TOOLS]
 
 
 @app.call_tool()
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Handle tool calls."""
     try:
+        if name not in SAFE_FFUF_TOOLS:
+            return [TextContent(type="text", text="This MCP only exposes bounded GET directory discovery.")]
         if name == "ffuf_dir":
             if len(active_scans) >= settings.max_concurrent_scans:
                 return [
@@ -546,11 +544,15 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             if "FUZZ" not in url:
                 url = url.rstrip("/") + "/FUZZ"
 
+            extensions = arguments.get("extensions")
+            if extensions and not set(extensions).issubset(SAFE_EXTENSIONS):
+                return [TextContent(type="text", text="Extensions must be selected from the documented catalog.")]
+
             result = await run_ffuf(
                 url=url,
                 wordlist=arguments.get("wordlist", "common"),
                 fuzz_type="directory",
-                extensions=arguments.get("extensions"),
+                extensions=extensions,
                 filter_codes=arguments.get("filter_codes", [404]),
                 threads=arguments.get("threads"),
                 timeout=arguments.get("timeout"),
@@ -572,14 +574,15 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
-            domain = arguments["domain"]
-            headers = {"Host": f"FUZZ.{domain}"}
+            domain = arguments["domain"].lower()
+            if not re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?", domain):
+                return [TextContent(type="text", text="domain must be a hostname without a port or control characters.")]
 
             result = await run_ffuf(
                 url=arguments["url"],
                 wordlist=arguments.get("wordlist", "subdomains-top1mil"),
                 fuzz_type="vhost",
-                headers=headers,
+                vhost_domain=domain,
                 filter_size=arguments.get("filter_size"),
                 threads=arguments.get("threads"),
                 timeout=arguments.get("timeout"),
@@ -601,12 +604,13 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
+            if "FUZZ" not in arguments["url"]:
+                return [TextContent(type="text", text="url must contain the FUZZ placeholder for GET parameter discovery.")]
+
             result = await run_ffuf(
                 url=arguments["url"],
                 wordlist=arguments.get("wordlist", "params-top"),
                 fuzz_type="parameter",
-                method=arguments.get("method", "GET"),
-                data=arguments.get("data"),
                 filter_size=arguments.get("filter_size"),
                 threads=arguments.get("threads"),
                 timeout=arguments.get("timeout"),

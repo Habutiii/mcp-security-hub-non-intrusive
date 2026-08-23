@@ -2,8 +2,8 @@
 #
 # Usage:
 #   docker-compose up -d                    # Start all services
-#   docker-compose up nuclei-mcp -d         # Start specific service
-#   docker-compose logs -f nuclei-mcp       # View logs
+#   docker-compose up nmap-mcp -d           # Start specific service
+#   docker-compose logs -f nmap-mcp         # View logs
 #   docker-compose down                     # Stop all services
 #
 # Security Notes:
@@ -176,40 +176,6 @@ services:
   # ===========================================================================
   # Web Security
   # ===========================================================================
-  nuclei-mcp:
-    build:
-      context: ./web-security/nuclei-mcp
-      dockerfile: Dockerfile
-    image: nuclei-mcp:latest
-    container_name: nuclei-mcp
-    environment:
-      - NUCLEI_RATE_LIMIT=${NUCLEI_RATE_LIMIT:-150}
-      - NUCLEI_SEVERITY=${NUCLEI_SEVERITY:-critical,high,medium}
-      - NUCLEI_TEMPLATES_PATH=/app/templates
-      - NUCLEI_OUTPUT_DIR=/app/output
-      - NUCLEI_TIMEOUT=${NUCLEI_TIMEOUT:-300}
-      - NUCLEI_MAX_CONCURRENT=${NUCLEI_MAX_CONCURRENT:-3}
-    volumes:
-      - nuclei-templates:/app/templates
-      - nuclei-output:/app/output
-    ports:
-      - "3003:3000"
-    networks:
-      - mcp-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-
   sqlmap-mcp:
     build:
       context: ./web-security/sqlmap-mcp
@@ -663,12 +629,6 @@ networks:
 # Volumes
 # =============================================================================
 volumes:
-  # Nuclei
-  nuclei-templates:
-    driver: local
-  nuclei-output:
-    driver: local
-
   # SQLMap
   sqlmap-output:
     driver: local

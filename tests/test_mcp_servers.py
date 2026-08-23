@@ -24,7 +24,6 @@ MCP_SERVERS = [
     ("reconnaissance", "masscan-mcp"),
     ("reconnaissance", "pd-tools-mcp"),
     ("reconnaissance", "externalattacker-mcp"),
-    ("web-security", "nuclei-mcp"),
     ("web-security", "sqlmap-mcp"),
     ("web-security", "ffuf-mcp"),
     ("web-security", "waybackurls-mcp"),
@@ -230,6 +229,31 @@ class TestCommandExecutionPolicy:
         assert "boofuzz_create_script" not in source
         assert "boofuzz_run_fuzzer" not in source
         assert "create_subprocess_exec" not in source
+
+
+class TestNonIntrusiveInterfaces:
+    """Ensure tool discovery is a positive, reviewed capability set."""
+
+    @pytest.mark.asyncio
+    async def test_nmap_scripts_are_fixed_to_the_reviewed_catalog(self):
+        module = load_server_module("reconnaissance", "nmap-mcp")
+        scripts = next(tool for tool in await module.list_tools() if tool.name == "script_scan")
+        assert scripts.inputSchema["properties"]["scripts"]["items"]["enum"] == sorted(module.SAFE_NSE_SCRIPTS)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("category", "mcp_name", "disabled_tools"),
+        [
+            ("web-security", "ffuf-mcp", {"ffuf_custom", "ffuf_vhost", "ffuf_param"}),
+            ("web-security", "sqlmap-mcp", {"sql_scan", "sql_enumerate", "sql_dump", "sql_test"}),
+        ],
+    )
+    async def test_state_changing_tools_are_not_advertised(
+        self, category: str, mcp_name: str, disabled_tools: set[str]
+    ):
+        module = load_server_module(category, mcp_name)
+        advertised_tools = {tool.name for tool in await module.list_tools()}
+        assert advertised_tools.isdisjoint(disabled_tools)
 
 
 class TestMCPWrappers:

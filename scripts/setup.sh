@@ -41,7 +41,7 @@ echo "[+] Setup complete!"
 echo
 echo "Usage:"
 echo "  docker-compose up -d              # Start all services"
-echo "  docker-compose up nuclei-mcp -d   # Start specific service"
+echo "  docker-compose up nmap-mcp -d     # Start specific service"
 echo "  docker-compose logs -f            # View logs"
 echo "  ./scripts/healthcheck.sh          # Check service health"
 echo

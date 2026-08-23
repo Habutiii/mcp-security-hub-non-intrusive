@@ -8,8 +8,7 @@ A Model Context Protocol server that provides web fuzzing capabilities using [ff
 |------|-------------|
 | `ffuf_dir` | Directory and file discovery fuzzing |
 | `ffuf_vhost` | Virtual host / subdomain discovery |
-| `ffuf_param` | GET/POST parameter fuzzing |
-| `ffuf_custom` | Custom fuzzing with full control |
+| `ffuf_param` | GET-only parameter-name discovery |
 | `list_wordlists` | List available wordlists |
 | `get_fuzz_results` | Retrieve results from previous session |
 | `list_active_scans` | Show running fuzzing sessions |
@@ -18,8 +17,8 @@ A Model Context Protocol server that provides web fuzzing capabilities using [ff
 
 - **Directory Discovery**: Find hidden files, directories, and endpoints
 - **Virtual Host Discovery**: Enumerate subdomains via Host header fuzzing
-- **Parameter Fuzzing**: Discover hidden GET/POST parameters
-- **Multiple Wordlists**: Pre-installed SecLists and custom wordlist support
+- **Parameter Fuzzing**: Discover hidden GET parameter names
+- **Fixed Wordlists**: Uses the reviewed, container-owned wordlist catalog
 - **Filtering**: Filter by status code, response size, word count
 - **Rate Limiting**: Control request rate to avoid detection
 
@@ -48,14 +47,6 @@ docker build -t ffuf-mcp .
 docker run --rm -i ffuf-mcp
 ```
 
-### With custom wordlists
-
-```bash
-docker run --rm -i \
-  -v /path/to/wordlists:/app/wordlists:ro \
-  ffuf-mcp
-```
-
 ## Claude Desktop Configuration
 
 Add to your `claude_desktop_config.json`:
@@ -81,6 +72,10 @@ Add to your `claude_desktop_config.json`:
 | `FFUF_MAX_CONCURRENT` | `2` | Max concurrent scans |
 | `FFUF_THREADS` | `40` | Default thread count |
 | `FFUF_RATE` | `0` | Rate limit (0 = unlimited) |
+
+All requests are GET. The server does not accept custom HTTP methods, bodies,
+caller-controlled headers, or arbitrary wordlist paths. Vhost discovery builds
+its Host header internally from a validated domain.
 
 ## Example Usage
 

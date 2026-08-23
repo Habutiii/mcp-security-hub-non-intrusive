@@ -70,10 +70,6 @@ Copy the example config to your Claude Desktop configuration:
       "command": "docker",
       "args": ["run", "-i", "--rm", "--cap-add=NET_RAW", "nmap-mcp:latest"]
     },
-    "nuclei": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "nuclei-mcp:latest"]
-    },
     "gitleaks": {
       "command": "docker",
       "args": ["run", "-i", "--rm", "-v", "/path/to/repos:/app/target:ro", "gitleaks-mcp:latest"]
@@ -103,8 +99,7 @@ For project-level config, copy `.mcp.json` to your project root. See [examples/]
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [nuclei-mcp](./web-security/nuclei-mcp) | 7 | Template-based vulnerability scanning with 8000+ templates |
-| [sqlmap-mcp](./web-security/sqlmap-mcp) | 8 | SQL injection detection and exploitation |
+| [sqlmap-mcp](./web-security/sqlmap-mcp) | 2 | Disabled execution; stored-result and status tools only |
 | [nikto-mcp](./web-security/nikto-mcp) | - | Wrapper for [Nikto MCP](https://github.com/weldpua2008/nikto-mcp) web server scanner |
 | [ffuf-mcp](./web-security/ffuf-mcp) | 9 | Web fuzzing for directories, files, parameters, and virtual hosts |
 | [waybackurls-mcp](./web-security/waybackurls-mcp) | 3 | Fetch historical URLs from Wayback Machine for reconnaissance |
@@ -177,9 +172,6 @@ Found 12 web servers:
 ```
 You: "Check example.com for common vulnerabilities"
 
-Claude: I'll run a vulnerability scan using nuclei templates.
-[Uses nuclei-mcp with cves, exposures, and misconfigurations templates]
-
 Found 3 issues:
 - HIGH: CVE-2024-1234 - Outdated jQuery version
 - MEDIUM: Exposed .git directory
@@ -215,7 +207,6 @@ mcp-security-hub/
 │   ├── networksdb-mcp/     # IP/ASN/DNS lookups
 │   └── externalattacker-mcp/ # Attack surface mapping
 ├── web-security/
-│   ├── nuclei-mcp/         # Vulnerability scanning
 │   ├── sqlmap-mcp/         # SQL injection
 │   ├── nikto-mcp/          # Web server scanning (wrapper)
 │   ├── ffuf-mcp/           # Web fuzzing
@@ -287,7 +278,7 @@ Contributions welcome! To add a new MCP server:
 
 - [Model Context Protocol](https://modelcontextprotocol.io/) - Protocol specification
 - [awesome-mcp-security](https://github.com/Puliczek/awesome-mcp-security) - MCP security catalog
-- Upstream tool maintainers: nmap, nuclei, radare2, sqlmap, and all others
+- Upstream tool maintainers: nmap, radare2, sqlmap, and all others
 
 ## License
 

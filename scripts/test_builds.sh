@@ -27,7 +27,6 @@ MCPS=(
     "reconnaissance/networksdb-mcp"
     "reconnaissance/externalattacker-mcp"
     # Web Security
-    "web-security/nuclei-mcp"
     "web-security/sqlmap-mcp"
     "web-security/nikto-mcp"
     "web-security/ffuf-mcp"

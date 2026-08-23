@@ -11,11 +11,6 @@
         "-v", ".:/app/target:ro",
         "gitleaks-mcp:latest"
       ]
-    },
-    "nuclei": {
-      "_description": "Vulnerability scanning for web targets",
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "nuclei-mcp:latest"]
     }
   }
 }

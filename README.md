@@ -42,12 +42,16 @@ cd mcp-security-hub
 # Build all MCP servers
 docker-compose build
 
-# Start specific servers
-docker-compose up nmap-mcp nuclei-mcp -d
-
-# Verify health
-docker-compose ps
+# Run an MCP in the foreground (for example, Nmap)
+# Ctrl+C sends a graceful stop; --rm removes the stopped container.
+docker run -i --rm --cap-add=NET_RAW --cap-add=NET_ADMIN nmap-mcp:latest
 ```
+
+These MCP servers use standard input/output, so do not start them with
+`docker compose up -d`: detached Compose closes stdin and the server exits. For
+an MCP client, use the `docker run -i --rm ...` configuration shown below. When
+the client stops it (including with Ctrl+C), Docker stops the process and removes
+the container because of `--rm`.
 
 ### Configure Claude Desktop / Claude Code
 

@@ -57,7 +57,7 @@ jobs:
         run: docker build --pull --tag "$IMAGE" .
 
       - name: Scan image for high and critical vulnerabilities
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           image-ref: ${{ env.IMAGE }}
           format: table
@@ -67,7 +67,7 @@ jobs:
 
       - name: Export vulnerability report
         if: always()
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           image-ref: ${{ env.IMAGE }}
           format: sarif

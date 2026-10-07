@@ -20,9 +20,10 @@ ARG FFUF_VERSION=2.1.0
 ARG GITLEAKS_VERSION=8.30.0
 ARG WHATWEB_REV=d279d93042d034f3fd29d5a893d44ccc0595d3f8
 ARG DHARMA_REV=6b1e5119646064a80122ca18944a98238d5eadb1
+ARG NIKTO_REV=312645d873478a77986627ab1fc8cffe595e85d4
 ARG SECLISTS_REV=49c3b2d1d2481572bd7b0cb5af875a73cdf9d08e
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl git hashcat masscan nikto nmap ruby-full ruby-bundler tini \
+      ca-certificates curl git hashcat libnet-ssleay-perl libxml-writer-perl masscan nmap perl ruby-full ruby-bundler tini \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=go-builder /go/bin/ /usr/local/bin/
@@ -41,8 +42,11 @@ RUN arch="$(dpkg --print-architecture)" && \
     rm -f "$ffuf_file" "ffuf_${FFUF_VERSION}_checksums.txt" "$gitleaks_file" "gitleaks_${GITLEAKS_VERSION}_checksums.txt" && \
     git clone https://github.com/urbanadventurer/WhatWeb.git /opt/whatweb && \
     git -C /opt/whatweb checkout --detach "$WHATWEB_REV" && \
+    git clone https://github.com/sullo/nikto.git /opt/nikto && \
+    git -C /opt/nikto checkout --detach "$NIKTO_REV" && \
     cd /opt/whatweb && bundle config set without 'development test' && bundle install && \
-    ln -s /opt/whatweb/whatweb /usr/local/bin/whatweb
+    ln -s /opt/whatweb/whatweb /usr/local/bin/whatweb && \
+    ln -s /opt/nikto/program/nikto.pl /usr/local/bin/nikto
 
 WORKDIR /opt/security-hub
 COPY gateway-mcp/requirements.txt /tmp/gateway-requirements.txt

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Web Surface Observation"
+  short_description: "Inspect a web surface safely"
+  default_prompt: "Use $web-surface-observation to inspect the approved web surface safely."

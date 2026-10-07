@@ -1,0 +1,9 @@
+node_modules/
+build/
+*.log
+.env
+.env.local
+.env.*.local
+logs/
+projectradar.yaml
+.mcpregistry_*

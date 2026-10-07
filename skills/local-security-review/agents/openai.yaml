@@ -1,0 +1,4 @@
+interface:
+  display_name: "Local Security Review"
+  short_description: "Review source and artifacts locally"
+  default_prompt: "Use $local-security-review to review the supplied source and artifacts locally."

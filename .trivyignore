@@ -1,0 +1,8 @@
+# Trivy ignore file for Offensive Security MCP Servers
+# https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+
+# Ignore specific CVEs that are false positives or accepted risks
+# Format: CVE-YYYY-NNNNN
+
+# Chromium vulnerabilities (used for headless scanning, sandboxed)
+# These are mitigated by container isolation and non-root execution

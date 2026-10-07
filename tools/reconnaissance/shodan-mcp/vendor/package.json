@@ -1,0 +1,51 @@
+{
+  "type": "module",
+  "name": "@burtthecoder/mcp-shodan",
+  "version": "1.0.27",
+  "description": "A Model Context Protocol server for Shodan API queries.",
+  "mcpName": "io.github.BurtTheCoder/shodan",
+  "main": "build/index.js",
+  "bin": {
+    "mcp-shodan": "build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x build/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "axios": ">=1.7.8 <1.14.1",
+    "dotenv": "^16.4.5",
+    "fastmcp": "^3.33.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.24"
+  },
+  "files": [
+    "build",
+    "README.md",
+    "LICENSE"
+  ],
+  "author": "BurtTheCoder",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BurtTheCoder/mcp-shodan.git"
+  },
+  "keywords": [
+    "mcp",
+    "shodan",
+    "mcp-shodan",
+    "cybersecurity",
+    "agents",
+    "network-reconnaissance",
+    "security-tools",
+    "shodan-api",
+    "shodan-integraton"
+  ],
+  "bugs": {
+    "url": "https://github.com/BurtTheCoder/mcp-shodan/issues"
+  },
+  "homepage": "https://github.com/BurtTheCoder/mcp-shodan#readme"
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Non-Intrusive Assessment"
+  short_description: "Plan a safe security assessment"
+  default_prompt: "Use $non-intrusive-security-assessment to assess the approved scope safely."

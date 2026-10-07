@@ -1,0 +1,4 @@
+interface:
+  display_name: "Asset Discovery"
+  short_description: "Run bounded asset discovery"
+  default_prompt: "Use $asset-discovery to map the approved assets without intrusive actions."

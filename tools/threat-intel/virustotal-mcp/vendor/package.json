@@ -1,0 +1,48 @@
+{
+  "name": "@burtthecoder/mcp-virustotal",
+  "mcpName": "io.github.BurtTheCoder/virustotal",
+  "version": "1.0.25",
+  "description": "MCP server for VirusTotal API integration",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "mcp-virustotal": "build/index.js"
+  },
+  "files": [
+    "build",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc && chmod +x build/index.js",
+    "start": "node build/index.js",
+    "dev": "tsc -w",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "smoke": "npm run build && node scripts/smoke-test.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "virustotal",
+    "security"
+  ],
+  "author": "BurtTheCoder",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BurtTheCoder/mcp-virustotal.git"
+  },
+  "dependencies": {
+    "axios": ">=1.4.0 <1.14.1",
+    "dotenv": "^16.4.5",
+    "fastmcp": "~3.25.4",
+    "zod": "^3.22.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  }
+}

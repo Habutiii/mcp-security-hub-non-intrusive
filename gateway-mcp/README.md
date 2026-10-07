@@ -51,10 +51,10 @@ also writes structured allow/reject scope events to its standard-error log.
 
 The image stays warm while individual MCP processes start lazily. By default,
 `AGW_IDLE_TIMEOUT_SECONDS=0`, so started MCP processes remain available for the
-whole AGW session. `AGW_MAX_WARM_PROCESSES` defaults to `10`, allowing every
-reviewed tool process to stay warm at once. Set a positive idle timeout or lower
-the limit only when a deployment needs to conserve memory. At a configured
-limit, the least-recently-used idle process is released; if every warm process
+whole AGW session. `AGW_MAX_WARM_PROCESSES` defaults to `0`, meaning unlimited:
+no initialized reviewed tool is evicted. Set a positive value only when a
+deployment needs an explicit memory bound. At a configured limit, the
+least-recently-used idle process is released; if every warm process
 is active, a new start is rejected. Each child receives
 code-owned address-space, CPU-time, and output-file limits before its server
 starts. Agents cannot alter those values.

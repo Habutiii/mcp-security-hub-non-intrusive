@@ -17,3 +17,16 @@ def test_compose_uses_an_immutable_root_filesystem():
     assert "read_only: true" in COMPOSE
     assert "cap_drop:" in COMPOSE
     assert "no-new-privileges:true" in COMPOSE
+
+
+def test_image_bundles_the_reviewed_seclists_catalog_without_runtime_fetching():
+    for path in (
+        "Passwords/Common-Credentials/10k-most-common.txt",
+        "Discovery/Web-Content/directory-list-2.3-medium.txt",
+        "Discovery/Web-Content/raft-large-directories.txt",
+        "Discovery/Web-Content/raft-large-files.txt",
+        "Discovery/DNS/subdomains-top1million-5000.txt",
+        "Discovery/Web-Content/burp-parameter-names.txt",
+    ):
+        assert path in DOCKERFILE
+    assert "apt-get purge -y --auto-remove curl git" in DOCKERFILE

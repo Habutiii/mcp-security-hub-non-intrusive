@@ -38,6 +38,11 @@ def test_gateway_has_required_lifecycle_controls_and_cleanup():
         assert control in GATEWAY_SOURCE
 
 
+def test_warm_processes_are_unlimited_by_default():
+    assert 'os.environ.get("AGW_MAX_WARM_PROCESSES", "0")' in GATEWAY_SOURCE
+    assert "while MAX_WARM_PROCESSES and len(running) >= MAX_WARM_PROCESSES:" in GATEWAY_SOURCE
+
+
 def test_gateway_fails_closed_on_capability_drift():
     assert "Capability contract drift" in GATEWAY_SOURCE
     assert "set(tools) != expected_tools" in GATEWAY_SOURCE

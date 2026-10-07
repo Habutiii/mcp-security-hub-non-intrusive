@@ -20,6 +20,7 @@ services:
       AGW_ALLOWED_TARGETS: ${AGW_ALLOWED_TARGETS:?set explicit authorized domains/CIDRs}
       # Zero keeps initialized tool MCP processes for the whole AGW session.
       AGW_IDLE_TIMEOUT_SECONDS: ${AGW_IDLE_TIMEOUT_SECONDS:-0}
-      # Default permits every reviewed tool to be warm concurrently.
-      AGW_MAX_WARM_PROCESSES: ${AGW_MAX_WARM_PROCESSES:-13}
+      # Zero is unlimited: retain every initialized reviewed tool for the
+      # gateway session. Set a positive value only to opt into LRU reaping.
+      AGW_MAX_WARM_PROCESSES: ${AGW_MAX_WARM_PROCESSES:-0}
       AGW_RAW_NETWORK_ENABLED: ${AGW_RAW_NETWORK_ENABLED:-false}

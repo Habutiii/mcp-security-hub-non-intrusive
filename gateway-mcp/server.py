@@ -77,7 +77,9 @@ app = Server("security-hub-gateway")
 # Keep started MCP processes for the gateway session by default. Deployments may
 # opt into reaping with a positive timeout; zero means no automatic shutdown.
 IDLE_TIMEOUT_SECONDS = max(0, int(os.environ.get("AGW_IDLE_TIMEOUT_SECONDS", "0")))
-MAX_WARM_PROCESSES = max(1, int(os.environ.get("AGW_MAX_WARM_PROCESSES", str(len(COMPONENTS)))) )
+# Zero is deliberately unlimited: a gateway session may keep every registered
+# child initialized. A positive deployment value enables the LRU safeguard.
+MAX_WARM_PROCESSES = max(0, int(os.environ.get("AGW_MAX_WARM_PROCESSES", "0")))
 RAW_NETWORK_ENABLED = os.environ.get("AGW_RAW_NETWORK_ENABLED", "false").lower() == "true"
 CHILD_BASE_ENVIRONMENT = {
     "HOME": "/home/mcpuser",
@@ -101,7 +103,7 @@ async def start_component(component_id: str) -> RunningComponent:
             existing.last_used = time.monotonic()
             return existing
 
-        while len(running) >= MAX_WARM_PROCESSES:
+        while MAX_WARM_PROCESSES and len(running) >= MAX_WARM_PROCESSES:
             idle = [instance for instance in running.values() if not instance.active_calls]
             if not idle:
                 raise RuntimeError("maximum warm MCP process count reached")

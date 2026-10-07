@@ -159,7 +159,7 @@ relevant skill and may use only the exact component/tool bindings returned.
 
 | Server | Tools | Description |
 |--------|-------|-------------|
-| [hashcat-mcp](./tools/password-cracking/hashcat-mcp) | 1 | Dictionary-only, authorized password recovery using a runtime-downloaded SecLists wordlist |
+| [hashcat-mcp](./tools/password-cracking/hashcat-mcp) | 1 | Dictionary-only, authorized password recovery using a pinned, bundled SecLists wordlist |
 
 ### Meta (1 server)
 

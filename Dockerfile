@@ -44,6 +44,7 @@ RUN arch="$(dpkg --print-architecture)" && \
     git -C /opt/whatweb checkout --detach "$WHATWEB_REV" && \
     git clone https://github.com/sullo/nikto.git /opt/nikto && \
     git -C /opt/nikto checkout --detach "$NIKTO_REV" && \
+    rm -rf /opt/whatweb/.git /opt/nikto/.git && \
     ln -s /opt/whatweb/whatweb /usr/local/bin/whatweb && \
     ln -s /opt/nikto/program/nikto.pl /usr/local/bin/nikto
 
@@ -62,15 +63,17 @@ RUN pip install --no-cache-dir -r /tmp/gateway-requirements.txt -r /tmp/boofuzz-
     git clone https://github.com/MozillaSecurity/dharma.git /tmp/dharma && \
     git -C /tmp/dharma checkout --detach "$DHARMA_REV" && \
     pip install --no-cache-dir /tmp/dharma && \
-    mkdir -p /app/grammars /app/wordlists /app/wordlists/dirb /app/wordlists/seclists/Discovery/Web-Content /app/wordlists/seclists/Discovery/DNS && \
+    mkdir -p /app/grammars /app/wordlists /app/wordlists/dirb /app/wordlists/dirbuster /app/wordlists/seclists/Discovery/Web-Content /app/wordlists/seclists/Discovery/DNS && \
     cp -r /tmp/dharma/dharma/grammars/. /app/grammars/ && rm -rf /tmp/dharma && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Passwords/Common-Credentials/10k-most-common.txt" -o /app/wordlists/10k-most-common.txt && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/common.txt" -o /app/wordlists/common.txt && \
+    curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/directory-list-2.3-medium.txt" -o /app/wordlists/dirbuster/directory-list-2.3-medium.txt && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/raft-large-directories.txt" -o /app/wordlists/seclists/Discovery/Web-Content/raft-large-directories.txt && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/raft-large-files.txt" -o /app/wordlists/seclists/Discovery/Web-Content/raft-large-files.txt && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/DNS/subdomains-top1million-5000.txt" -o /app/wordlists/seclists/Discovery/DNS/subdomains-top1million-5000.txt && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/burp-parameter-names.txt" -o /app/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt && \
-    cp /app/wordlists/common.txt /app/wordlists/dirb/common.txt
+    cp /app/wordlists/common.txt /app/wordlists/dirb/common.txt && \
+    apt-get purge -y --auto-remove curl git
 
 COPY gateway-mcp/ ./gateway-mcp/
 COPY adapters/ ./adapters/

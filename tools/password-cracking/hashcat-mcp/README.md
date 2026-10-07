@@ -10,11 +10,11 @@ An MCP server for authorized password recovery using Hashcat's dictionary attack
 - Uses the SecLists `10k-most-common.txt` dictionary only.
 - Caps each attempt at five minutes.
 
-## SecLists runtime download
+## Bundled SecLists dictionary
 
-The image contains no wordlists. On container start, it downloads the fixed `10k-most-common.txt` URL from the official SecLists GitHub repository over HTTPS if it is not already present in `/app/wordlists`.
-
-For Compose deployments, mount a named volume at `/app/wordlists` to cache the downloaded dictionary between container starts. Delete that volume to force a fresh download.
+The image build pins and bundles SecLists `10k-most-common.txt` at
+`/app/wordlists/10k-most-common.txt`. The adapter never downloads a wordlist at
+runtime and never accepts an alternate path from an agent.
 
 ## Authorized use
 

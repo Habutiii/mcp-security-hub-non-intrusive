@@ -75,7 +75,7 @@ async def list_tools() -> list[Tool]:
     return [
         Tool(
             name="hashcat_dictionary_crack",
-            description="Attempt authorized password recovery using only the runtime-downloaded SecLists dictionary.",
+            description="Attempt authorized password recovery using only the pinned, bundled SecLists dictionary.",
             inputSchema={
                 "type": "object",
                 "additionalProperties": False,

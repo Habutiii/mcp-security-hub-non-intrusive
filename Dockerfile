@@ -23,7 +23,7 @@ ARG DHARMA_REV=6b1e5119646064a80122ca18944a98238d5eadb1
 ARG NIKTO_REV=312645d873478a77986627ab1fc8cffe595e85d4
 ARG SECLISTS_REV=49c3b2d1d2481572bd7b0cb5af875a73cdf9d08e
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl git hashcat libnet-ssleay-perl libxml-writer-perl masscan nmap perl ruby-full ruby-bundler tini \
+      ca-certificates curl git hashcat libnet-ssleay-perl libxml-writer-perl masscan nmap perl ruby-addressable ruby-full tini \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=go-builder /go/bin/ /usr/local/bin/
@@ -44,7 +44,6 @@ RUN arch="$(dpkg --print-architecture)" && \
     git -C /opt/whatweb checkout --detach "$WHATWEB_REV" && \
     git clone https://github.com/sullo/nikto.git /opt/nikto && \
     git -C /opt/nikto checkout --detach "$NIKTO_REV" && \
-    cd /opt/whatweb && bundle config set without 'development test' && bundle install && \
     ln -s /opt/whatweb/whatweb /usr/local/bin/whatweb && \
     ln -s /opt/nikto/program/nikto.pl /usr/local/bin/nikto
 

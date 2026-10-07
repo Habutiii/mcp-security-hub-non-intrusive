@@ -79,6 +79,15 @@ app = Server("security-hub-gateway")
 IDLE_TIMEOUT_SECONDS = max(0, int(os.environ.get("AGW_IDLE_TIMEOUT_SECONDS", "0")))
 MAX_WARM_PROCESSES = max(1, int(os.environ.get("AGW_MAX_WARM_PROCESSES", str(len(COMPONENTS)))) )
 RAW_NETWORK_ENABLED = os.environ.get("AGW_RAW_NETWORK_ENABLED", "false").lower() == "true"
+CHILD_BASE_ENVIRONMENT = {
+    "HOME": "/home/mcpuser",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "PYTHONPATH": "/opt/security-hub",
+    "PYTHONUNBUFFERED": "1",
+    "TMPDIR": "/tmp",
+}
 
 
 async def start_component(component_id: str) -> RunningComponent:
@@ -101,7 +110,7 @@ async def start_component(component_id: str) -> RunningComponent:
         component = COMPONENTS[component_id]
         if component.capability.privilege_profile == PrivilegeProfile.RAW_NETWORK and not RAW_NETWORK_ENABLED:
             raise RuntimeError("raw-network tools are disabled; enable AGW_RAW_NETWORK_ENABLED only in an authorized deployment")
-        environment = os.environ.copy()
+        environment = CHILD_BASE_ENVIRONMENT.copy()
         environment.update(dict(component.environment))
         parameters = StdioServerParameters(
             command=sys.executable,

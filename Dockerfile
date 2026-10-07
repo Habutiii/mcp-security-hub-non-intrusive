@@ -54,7 +54,8 @@ COPY tools/reconnaissance/nmap-mcp/requirements.txt tools/reconnaissance/nmap-mc
 COPY tools/reconnaissance/whatweb-mcp/requirements.txt tools/reconnaissance/whatweb-mcp/requirements.txt
 COPY tools/web-security/ffuf-mcp/requirements.txt tools/web-security/ffuf-mcp/requirements.txt
 COPY tools/fuzzing/boofuzz-mcp/requirements.txt /tmp/boofuzz-requirements.txt
-RUN pip install --no-cache-dir -r /tmp/gateway-requirements.txt -r /tmp/boofuzz-requirements.txt && \
+COPY tools/reconnaissance/nmap-mcp/requirements.txt /tmp/nmap-requirements.txt
+RUN pip install --no-cache-dir -r /tmp/gateway-requirements.txt -r /tmp/boofuzz-requirements.txt -r /tmp/nmap-requirements.txt && \
     git clone https://github.com/MozillaSecurity/dharma.git /tmp/dharma && \
     git -C /tmp/dharma checkout --detach "$DHARMA_REV" && \
     pip install --no-cache-dir /tmp/dharma && \

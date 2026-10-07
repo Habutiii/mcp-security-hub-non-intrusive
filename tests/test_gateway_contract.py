@@ -18,6 +18,14 @@ def test_gateway_uses_a_fixed_component_registry():
     assert "reap_idle_components" in GATEWAY_SOURCE
 
 
+def test_children_receive_only_code_owned_environment_values():
+    launcher_source = (ROOT_DIR / "gateway-mcp" / "launcher.py").read_text(encoding="utf-8")
+    assert "os.environ.copy()" not in GATEWAY_SOURCE
+    assert "os.environ.clear()" in launcher_source
+    assert 'os.execv(sys.executable, [sys.executable, "server.py"])' in launcher_source
+    assert 'value.startswith("/var/lib/security-hub/")' in launcher_source
+
+
 def test_gateway_has_required_lifecycle_controls_and_cleanup():
     for control in (
         "gateway_list_capabilities",

@@ -20,11 +20,11 @@ import logging
 import os
 import re
 import uuid
-import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from defusedxml import ElementTree as ET
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import (

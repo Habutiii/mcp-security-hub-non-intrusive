@@ -88,7 +88,7 @@ Before adding or updating an MCP server, verify:
 2. All executable options, templates, scripts, paths, URLs, and request methods are allowlisted.
 3. No input can introduce shell syntax or invoke a generic command runner.
 4. Active traffic is rate-limited, scoped, timed out, and concurrency-limited.
-5. The implementation and its upstream dependency are reviewed and pinned or vendored.
+5. The AGW-owned implementation and every native dependency are reviewed and pinned.
 6. Tests cover input validation and rejection of state-changing or command-execution escape hatches.
 7. Gateway-managed processes have tests for lazy start, prewarm without target
    traffic, idle-only shutdown, and complete session cleanup.

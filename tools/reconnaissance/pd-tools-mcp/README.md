@@ -1,6 +1,6 @@
 # PD-Tools MCP Server
 
-A restricted, vendored implementation based on [pd-tools-mcp](https://github.com/intelligent-ears/pd-tools-mcp). It exposes only bounded, non-mutating ProjectDiscovery discovery operations.
+An AGW-owned Python adapter that exposes only bounded, non-mutating ProjectDiscovery discovery operations.
 
 ## Included Tools
 
@@ -16,7 +16,9 @@ A restricted, vendored implementation based on [pd-tools-mcp](https://github.com
 
 The MCP intentionally excludes Nuclei, unrestricted templates, screenshots, redirects, and the automated bug-bounty workflow. Its tools use fixed options: 20 targets maximum, one concurrent run, 120-second timeout, low HTTP/port-scan rates, a crawl depth of two, and no caller-supplied executable arguments.
 
-The reviewed upstream source is retained in [`vendor/`](./vendor/) for provenance. The restricted runtime is [`server.py`](./server.py); see [`UPSTREAM.md`](./UPSTREAM.md).
+The restricted runtime is [`server.py`](./server.py). Its tool schema and
+arguments are owned by this repository; upstream projects are not included as
+MCP server implementations.
 
 ## Docker
 

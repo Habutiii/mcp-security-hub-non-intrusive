@@ -1,6 +1,6 @@
 # ExternalAttacker MCP Server
 
-Restricted, vendored implementation based on [MorDavid/ExternalAttacker-MCP](https://github.com/MorDavid/ExternalAttacker-MCP). It supports non-mutating external attack-surface discovery only.
+An AGW-owned Python adapter for non-mutating external attack-surface discovery.
 
 ## Features
 
@@ -46,7 +46,8 @@ docker run -i --rm externalattacker-mcp
 
 The upstream generic command runner and updater are not part of the runtime. Endpoint fuzzing, Gobuster modes, Nuclei, file inputs, custom wordlists, methods, resolvers, thread counts, and output paths are not exposed. Ports are fixed to 80 and 443, while HTTP and port scanning use fixed low rates.
 
-The reviewed upstream source is retained in [`vendor/`](./vendor/) for provenance. The restricted runtime is [`server.py`](./server.py); see [`UPSTREAM.md`](./UPSTREAM.md).
+The restricted runtime is [`server.py`](./server.py). Its schema and command
+arguments are owned by this repository; upstream MCP server code is not used.
 
 ## Security Notice
 

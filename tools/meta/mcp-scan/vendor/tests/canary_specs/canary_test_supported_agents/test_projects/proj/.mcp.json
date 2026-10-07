@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "canary-project-fixture-mcp": {
-      "command": "echo",
-      "args": ["fixture"]
-    }
-  }
-}

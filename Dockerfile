@@ -88,7 +88,7 @@ COPY tools/reconnaissance/masscan-mcp/ ./tools/masscan/
 COPY tools/web-security/sqlmap-mcp/ ./tools/sqlmap/
 COPY tools/web-security/nikto-observer-mcp/ ./tools/nikto/
 
-# Code, vendored assets, wordlists, and grammar files are root-owned and
+# Code, pinned scanner assets, wordlists, and grammar files are root-owned and
 # read-only to every tool process. Only the dedicated runtime directory is
 # writable by the unprivileged MCP account.
 RUN useradd --create-home --uid 1000 mcpuser && \

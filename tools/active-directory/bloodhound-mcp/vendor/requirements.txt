@@ -1,4 +1,0 @@
-neo4j
-python-dotenv
-mcp-server>=0.1.0
-fastmcp

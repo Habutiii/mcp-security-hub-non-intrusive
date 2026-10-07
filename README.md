@@ -105,19 +105,19 @@ relevant skill and may use only the exact component/tool bindings returned.
 |--------|-------|-------------|
 | [nmap-mcp](./tools/reconnaissance/nmap-mcp) | 8 | Port scanning, service detection, OS fingerprinting, NSE scripts |
 | [shodan-mcp](./tools/reconnaissance/shodan-mcp) | - | Wrapper for [official Shodan MCP](https://github.com/BurtTheCoder/mcp-shodan) |
-| [pd-tools-mcp](./tools/reconnaissance/pd-tools-mcp) | 5 | Restricted, vendored ProjectDiscovery discovery tools (subfinder, dnsx, naabu, httpx, katana) |
+| [pd-tools-mcp](./tools/reconnaissance/pd-tools-mcp) | 5 | AGW-owned bounded ProjectDiscovery discovery adapter (subfinder, dnsx, naabu, httpx, katana) |
 | [whatweb-mcp](./tools/reconnaissance/whatweb-mcp) | 5 | Web technology fingerprinting and CMS detection |
 | [masscan-mcp](./tools/reconnaissance/masscan-mcp) | 6 | High-speed port scanning for large networks |
 | [zoomeye-mcp](./tools/reconnaissance/zoomeye-mcp) | - | Wrapper for [ZoomEye MCP](https://github.com/zoomeye-ai/mcp_zoomeye) - Cyberspace search engine |
 | [networksdb-mcp](./tools/reconnaissance/networksdb-mcp) | 4 | IP/ASN/DNS lookups via [NetworksDB](https://github.com/MorDavid/NetworksDB-MCP) |
-| [externalattacker-mcp](./tools/reconnaissance/externalattacker-mcp) | 5 | Restricted, vendored external attack-surface discovery |
+| [externalattacker-mcp](./tools/reconnaissance/externalattacker-mcp) | 5 | AGW-owned bounded external attack-surface discovery adapter |
 
 ### Web Security (6 servers)
 
 | Server | Tools | Description |
 |--------|-------|-------------|
 | [sqlmap-mcp](./tools/web-security/sqlmap-mcp) | 2 | Disabled execution; stored-result and status tools only |
-| [nikto-mcp](./tools/web-security/nikto-mcp) | - | Wrapper for [Nikto MCP](https://github.com/weldpua2008/nikto-mcp) web server scanner |
+| `nikto-observer-mcp` | 2 | AGW-owned fixed-function observer backed by a pinned Nikto scanner binary |
 | [ffuf-mcp](./tools/web-security/ffuf-mcp) | 9 | Web fuzzing for directories, files, parameters, and virtual hosts |
 | [waybackurls-mcp](./tools/web-security/waybackurls-mcp) | 3 | Fetch historical URLs from Wayback Machine for reconnaissance |
 | [burp-mcp](./tools/web-security/burp-mcp) | - | Wrapper for [official Burp Suite MCP](https://github.com/PortSwigger/mcp-server) |

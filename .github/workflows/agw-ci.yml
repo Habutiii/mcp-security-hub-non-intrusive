@@ -45,6 +45,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r gateway-mcp/requirements.txt
           python -m pip install -r tools/fuzzing/boofuzz-mcp/requirements.txt
+          python -m pip install -r tools/reconnaissance/nmap-mcp/requirements.txt
           python -m pip install pytest pytest-asyncio
 
       - name: Run pytest
@@ -54,10 +55,11 @@ jobs:
         run: docker compose config --quiet
 
       - name: Build the AGW image
+        id: build-image
         run: docker build --pull --tag "$IMAGE" .
 
       - name: Scan image for high and critical vulnerabilities
-        uses: aquasecurity/trivy-action@v0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}
           format: table
@@ -66,8 +68,8 @@ jobs:
           severity: HIGH,CRITICAL
 
       - name: Export vulnerability report
-        if: always()
-        uses: aquasecurity/trivy-action@v0.33.1
+        if: ${{ always() && steps.build-image.outcome == 'success' }}
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}
           format: sarif
@@ -76,8 +78,8 @@ jobs:
           severity: HIGH,CRITICAL
 
       - name: Upload vulnerability report
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        if: ${{ always() && hashFiles('trivy-agw.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-agw.sarif
           category: agw-image

@@ -1,6 +1,6 @@
 # Single-image, local-process security hub. Only gateway-reviewed MCPs are
 # included; upstream wrappers that are not in capability_policy.py stay out.
-FROM golang:1.25-trixie AS go-builder
+FROM golang:1.26-trixie AS go-builder
 
 ENV CGO_ENABLED=0 GOPATH=/go PATH=/go/bin:$PATH
 RUN go install github.com/tomnomnom/waybackurls@v0.1.0 && \

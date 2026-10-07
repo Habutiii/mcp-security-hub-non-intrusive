@@ -3,7 +3,7 @@
 FROM golang:1.24-trixie AS go-builder
 
 ENV CGO_ENABLED=0 GOPATH=/go PATH=/go/bin:$PATH
-RUN go install github.com/tomnomnom/waybackurls@latest && \
+RUN go install github.com/tomnomnom/waybackurls@v0.1.0 && \
     go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@v2.9.0 && \
     go install github.com/projectdiscovery/dnsx/cmd/dnsx@v1.3.0 && \
     go install github.com/projectdiscovery/naabu/v2/cmd/naabu@v2.6.1 && \
@@ -18,6 +18,9 @@ FROM python:3.14-slim-trixie
 
 ARG FFUF_VERSION=2.1.0
 ARG GITLEAKS_VERSION=8.30.0
+ARG WHATWEB_REV=d279d93042d034f3fd29d5a893d44ccc0595d3f8
+ARG DHARMA_REV=6b1e5119646064a80122ca18944a98238d5eadb1
+ARG SECLISTS_REV=49c3b2d1d2481572bd7b0cb5af875a73cdf9d08e
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl git hashcat masscan nikto nmap ruby-full ruby-bundler tini \
     && rm -rf /var/lib/apt/lists/*
@@ -25,9 +28,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=go-builder /go/bin/ /usr/local/bin/
 RUN arch="$(dpkg --print-architecture)" && \
     case "$arch" in amd64) ffuf_arch=amd64; gitleaks_arch=x64 ;; arm64) ffuf_arch=arm64; gitleaks_arch=arm64 ;; *) exit 1 ;; esac && \
-    curl -fsSL "https://github.com/ffuf/ffuf/releases/download/v${FFUF_VERSION}/ffuf_${FFUF_VERSION}_linux_${ffuf_arch}.tar.gz" | tar -xz -C /usr/local/bin ffuf && \
-    curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${gitleaks_arch}.tar.gz" | tar -xz -C /usr/local/bin gitleaks && \
-    git clone --depth 1 https://github.com/urbanadventurer/WhatWeb.git /opt/whatweb && \
+    ffuf_file="ffuf_${FFUF_VERSION}_linux_${ffuf_arch}.tar.gz" && \
+    curl -fsSLO "https://github.com/ffuf/ffuf/releases/download/v${FFUF_VERSION}/${ffuf_file}" && \
+    curl -fsSLO "https://github.com/ffuf/ffuf/releases/download/v${FFUF_VERSION}/ffuf_${FFUF_VERSION}_checksums.txt" && \
+    grep "  ${ffuf_file}$" "ffuf_${FFUF_VERSION}_checksums.txt" | sha256sum -c - && \
+    tar -xzf "$ffuf_file" -C /usr/local/bin ffuf && \
+    gitleaks_file="gitleaks_${GITLEAKS_VERSION}_linux_${gitleaks_arch}.tar.gz" && \
+    curl -fsSLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${gitleaks_file}" && \
+    curl -fsSLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt" && \
+    grep "  ${gitleaks_file}$" "gitleaks_${GITLEAKS_VERSION}_checksums.txt" | sha256sum -c - && \
+    tar -xzf "$gitleaks_file" -C /usr/local/bin gitleaks && \
+    rm -f "$ffuf_file" "ffuf_${FFUF_VERSION}_checksums.txt" "$gitleaks_file" "gitleaks_${GITLEAKS_VERSION}_checksums.txt" && \
+    git clone https://github.com/urbanadventurer/WhatWeb.git /opt/whatweb && \
+    git -C /opt/whatweb checkout --detach "$WHATWEB_REV" && \
     cd /opt/whatweb && bundle config set without 'development test' && bundle install && \
     ln -s /opt/whatweb/whatweb /usr/local/bin/whatweb
 
@@ -42,17 +55,18 @@ COPY tools/reconnaissance/whatweb-mcp/requirements.txt tools/reconnaissance/what
 COPY tools/web-security/ffuf-mcp/requirements.txt tools/web-security/ffuf-mcp/requirements.txt
 COPY tools/fuzzing/boofuzz-mcp/requirements.txt /tmp/boofuzz-requirements.txt
 RUN pip install --no-cache-dir -r /tmp/gateway-requirements.txt -r /tmp/boofuzz-requirements.txt && \
-    git clone --depth 1 https://github.com/MozillaSecurity/dharma.git /tmp/dharma && \
+    git clone https://github.com/MozillaSecurity/dharma.git /tmp/dharma && \
+    git -C /tmp/dharma checkout --detach "$DHARMA_REV" && \
     pip install --no-cache-dir /tmp/dharma && \
     mkdir -p /app/grammars /app/wordlists /app/wordlists/dirb /app/wordlists/seclists/Discovery/Web-Content /app/wordlists/seclists/Discovery/DNS && \
     cp -r /tmp/dharma/dharma/grammars/. /app/grammars/ && rm -rf /tmp/dharma && \
-    curl -fsSL https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Common-Credentials/10k-most-common.txt -o /app/wordlists/10k-most-common.txt && \
-    curl -fsSL https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/common.txt -o /app/wordlists/common.txt && \
-    curl -fsSL https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/raft-large-directories.txt -o /app/wordlists/seclists/Discovery/Web-Content/raft-large-directories.txt && \
-    curl -fsSL https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/raft-large-files.txt -o /app/wordlists/seclists/Discovery/Web-Content/raft-large-files.txt && \
-    curl -fsSL https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-5000.txt -o /app/wordlists/seclists/Discovery/DNS/subdomains-top1million-5000.txt && \
-    curl -fsSL https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/burp-parameter-names.txt -o /app/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt && \
-    curl -fsSL https://raw.githubusercontent.com/v0re/dirb/master/wordlists/common.txt -o /app/wordlists/dirb/common.txt
+    curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Passwords/Common-Credentials/10k-most-common.txt" -o /app/wordlists/10k-most-common.txt && \
+    curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/common.txt" -o /app/wordlists/common.txt && \
+    curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/raft-large-directories.txt" -o /app/wordlists/seclists/Discovery/Web-Content/raft-large-directories.txt && \
+    curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/raft-large-files.txt" -o /app/wordlists/seclists/Discovery/Web-Content/raft-large-files.txt && \
+    curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/DNS/subdomains-top1million-5000.txt" -o /app/wordlists/seclists/Discovery/DNS/subdomains-top1million-5000.txt && \
+    curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/burp-parameter-names.txt" -o /app/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt && \
+    cp /app/wordlists/common.txt /app/wordlists/dirb/common.txt
 
 COPY gateway-mcp/ ./gateway-mcp/
 COPY adapters/ ./adapters/

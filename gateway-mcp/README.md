@@ -20,6 +20,11 @@ Target-facing tools fail closed unless `AGW_ALLOWED_TARGETS` is configured by
 the deployment. It accepts a comma-separated allowlist of registrable domains
 and/or IP networks, for example `example.com,10.10.0.0/16`. Subdomains of an
 allowed domain and IP subnets contained by an allowed network are permitted.
+For every domain request, the gateway resolves the current DNS answer before
+launching a tool. Loopback, private, link-local, multicast, reserved, and
+unspecified answers are rejected unless the deployment also explicitly allows
+the matching IP network. This prevents DNS rebinding from turning a domain
+allowlist entry into access to local services.
 
 ```powershell
 docker run -i --rm -e AGW_ALLOWED_TARGETS=example.com,10.10.0.0/16 security-hub-agw:latest

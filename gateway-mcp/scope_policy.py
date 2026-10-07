@@ -2,6 +2,7 @@
 
 import ipaddress
 import os
+import socket
 from urllib.parse import urlparse
 
 
@@ -41,6 +42,61 @@ def _in_scope(value: str, allowed: tuple[str, ...]) -> bool:
     return False
 
 
+def _allowed_networks(allowed: tuple[str, ...]) -> tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...]:
+    networks = []
+    for entry in allowed:
+        try:
+            networks.append(ipaddress.ip_network(entry, strict=False))
+        except ValueError:
+            continue
+    return tuple(networks)
+
+
+def _resolved_addresses(hostname: str) -> set[ipaddress.IPv4Address | ipaddress.IPv6Address]:
+    """Resolve a hostname immediately before tool startup.
+
+    The lookup is deliberately performed for every authorized domain request so
+    a DNS answer cannot silently move a domain-scoped operation onto a local or
+    private network.
+    """
+    try:
+        results = socket.getaddrinfo(hostname, None, type=socket.SOCK_STREAM)
+    except socket.gaierror as error:
+        raise ScopeError("target hostname could not be resolved") from error
+    addresses = {ipaddress.ip_address(result[4][0]) for result in results}
+    if not addresses:
+        raise ScopeError("target hostname did not resolve to an IP address")
+    return addresses
+
+
+def _validate_resolved_target(value: str, allowed: tuple[str, ...]) -> None:
+    """Reject domain names that currently resolve to unsafe network addresses.
+
+    Private addresses remain supported only when the deployment explicitly
+    includes the matching CIDR in ``AGW_ALLOWED_TARGETS``. This prevents a
+    domain allowlist entry from being used as a DNS-rebinding path to local
+    services while retaining intentional internal assessments.
+    """
+    hostname = _hostname(value)
+    try:
+        ipaddress.ip_address(hostname)
+        return
+    except ValueError:
+        pass
+    networks = _allowed_networks(allowed)
+    for address in _resolved_addresses(hostname):
+        unsafe = (
+            address.is_private
+            or address.is_loopback
+            or address.is_link_local
+            or address.is_multicast
+            or address.is_reserved
+            or address.is_unspecified
+        )
+        if unsafe and not any(address in network for network in networks):
+            raise ScopeError("target hostname resolved to an address outside explicit IP scope")
+
+
 TARGET_FIELDS: dict[str, tuple[str, ...]] = {
     "waybackurls": ("domain",),
     "nmap": ("target",),
@@ -71,6 +127,8 @@ def validate_scope(component_id: str, arguments: dict[str, object]) -> dict[str,
     rejected = [target for target in targets if not _in_scope(target, allowed)]
     if rejected:
         raise ScopeError("target is outside AGW_ALLOWED_TARGETS")
+    for target in targets:
+        _validate_resolved_target(target, allowed)
     if component_id == "masscan":
         for target in targets:
             try:

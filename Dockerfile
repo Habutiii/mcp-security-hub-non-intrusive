@@ -4,13 +4,13 @@ FROM golang:1.26-trixie AS go-builder
 
 ENV CGO_ENABLED=0 GOPATH=/go PATH=/go/bin:$PATH
 RUN go install github.com/tomnomnom/waybackurls@v0.1.0 && \
-    go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@v2.9.0 && \
-    go install github.com/projectdiscovery/dnsx/cmd/dnsx@v1.3.0 && \
+    go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@v2.16.0 && \
+    go install github.com/projectdiscovery/dnsx/cmd/dnsx@v1.3.1 && \
     go install github.com/projectdiscovery/naabu/v2/cmd/naabu@v2.6.1 && \
-    go install github.com/projectdiscovery/httpx/cmd/httpx@v1.9.0 && \
-    go install github.com/projectdiscovery/katana/cmd/katana@v1.7.0 && \
-    go install github.com/projectdiscovery/cdncheck/cmd/cdncheck@v1.2.9 && \
-    go install github.com/projectdiscovery/tlsx/cmd/tlsx@v1.3.0
+    go install github.com/projectdiscovery/httpx/cmd/httpx@v1.12.0 && \
+    go install github.com/projectdiscovery/katana/cmd/katana@v1.8.0 && \
+    go install github.com/projectdiscovery/cdncheck/cmd/cdncheck@v1.3.1 && \
+    go install github.com/projectdiscovery/tlsx/cmd/tlsx@v1.4.0
 
 # Track the current supported Python feature release; all AGW adapters use the
 # standard Python APIs and do not require the legacy Dharma runtime.

@@ -36,6 +36,7 @@ Every MCP server in this repository must enforce its own boundary; prompting alo
 
 - Use argument-vector process execution, never a shell. Do not accept `extra_args`, command strings, pipes, redirects, or command separators from MCP inputs.
 - Validate every input with an allowlist and typed schema. Paths must remain within approved mounted directories.
+- Expose each approved scanner flag as its own bounded MCP field. Reject unknown fields at the gateway and in each adapter; map values to fixed argv positions or scanner stdin. Agent text stays in one argv element and is never parsed as a command line.
 - Expose fixed, purpose-specific operations. Do not expose arbitrary code execution, arbitrary local scripts, generic command runners, or raw terminal access.
 - Allowlist scanner scripts, plugins, and templates. Only reviewed non-mutating checks may be agent-callable.
 - Do not expose arbitrary HTTP methods, request bodies, headers, credentials, or callbacks when they could make a state-changing request or exfiltrate data.

@@ -18,7 +18,6 @@ Tools:
 import asyncio
 import json
 import logging
-import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -33,6 +32,7 @@ from mcp.types import (
 )
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
+from adapters.input_validation import bounded_int, host, http_url
 
 # Configure logging
 logging.basicConfig(
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     default_timeout: int = Field(default=600, alias="FFUF_TIMEOUT")
     max_concurrent_scans: int = Field(default=2, alias="FFUF_MAX_CONCURRENT")
     default_threads: int = Field(default=40, alias="FFUF_THREADS")
-    default_rate: int = Field(default=0, alias="FFUF_RATE")  # 0 = unlimited
+    default_rate: int = Field(default=1, alias="FFUF_RATE")
 
     class Config:
         env_prefix = "FFUF_"
@@ -104,6 +104,62 @@ WORDLISTS = {
     "params-top": "/app/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt",
 }
 SAFE_EXTENSIONS = frozenset({"asp", "aspx", "html", "htm", "js", "json", "php", "txt", "xml"})
+SCAN_FIELDS = frozenset({
+    "url", "wordlist", "extensions", "domain", "match_codes", "filter_codes",
+    "filter_size", "filter_words", "filter_lines", "threads", "rate", "timeout",
+})
+
+
+def _status_codes(value: Any, name: str) -> list[int]:
+    if not isinstance(value, list) or not 1 <= len(value) <= 16:
+        raise ValueError(f"{name} must contain 1 to 16 HTTP status codes")
+    codes = [bounded_int(code, name, 100, 599) for code in value]
+    if len(set(codes)) != len(codes):
+        raise ValueError(f"{name} must not contain duplicate codes")
+    return codes
+
+
+def validate_scan_options(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Accept only typed, bounded options that map to fixed ffuf flags."""
+    allowed = SCAN_FIELDS - ({"domain"} if name != "ffuf_vhost" else {"extensions"})
+    if name != "ffuf_dir":
+        allowed -= {"extensions"}
+    unknown = set(arguments) - allowed
+    if unknown:
+        raise ValueError(f"unsupported ffuf options: {', '.join(sorted(unknown))}")
+
+    url = http_url(arguments["url"])
+    if name == "ffuf_dir" and "FUZZ" not in url:
+        url = url.rstrip("/") + "/FUZZ"
+    if name == "ffuf_param" and "FUZZ" not in url:
+        raise ValueError("url must contain the FUZZ placeholder for GET parameter discovery")
+    if name == "ffuf_vhost" and "FUZZ" in url:
+        raise ValueError("vhost URL must not contain FUZZ")
+
+    defaults = {"ffuf_dir": "common", "ffuf_vhost": "subdomains-top1mil", "ffuf_param": "params-top"}
+    wordlist = arguments.get("wordlist", defaults[name])
+    get_wordlist_path(wordlist)
+    options: dict[str, Any] = {"url": url, "wordlist": wordlist}
+    if name == "ffuf_vhost":
+        options["vhost_domain"] = host(arguments["domain"])
+    if "extensions" in arguments:
+        extensions = arguments["extensions"]
+        if (not isinstance(extensions, list) or not 1 <= len(extensions) <= len(SAFE_EXTENSIONS)
+                or any(not isinstance(ext, str) or ext not in SAFE_EXTENSIONS for ext in extensions)
+                or len(set(extensions)) != len(extensions)):
+            raise ValueError("extensions must be unique entries from the documented catalog")
+        options["extensions"] = extensions
+    for field in ("match_codes", "filter_codes"):
+        if field in arguments:
+            options[field] = _status_codes(arguments[field], field)
+    for field, minimum, maximum in (
+        ("filter_size", 0, 10_000_000), ("filter_words", 0, 1_000_000),
+        ("filter_lines", 0, 1_000_000), ("threads", 1, 40),
+        ("rate", 1, 100), ("timeout", 1, 600),
+    ):
+        if field in arguments:
+            options[field] = bounded_int(arguments[field], field, minimum, maximum)
+    return options
 
 
 def parse_ffuf_json(output: str) -> list[FuzzResult]:
@@ -132,7 +188,7 @@ def parse_ffuf_json(output: str) -> list[FuzzResult]:
 
 def get_wordlist_path(wordlist: str) -> str:
     """Return a reviewed, container-owned wordlist path."""
-    if wordlist not in WORDLISTS:
+    if not isinstance(wordlist, str) or wordlist not in WORDLISTS:
         raise ValueError("wordlist must be one of the documented wordlist names")
     return WORDLISTS[wordlist]
 
@@ -146,6 +202,7 @@ async def run_ffuf(
     filter_codes: list[int] | None = None,
     filter_size: int | None = None,
     filter_words: int | None = None,
+    filter_lines: int | None = None,
     threads: int | None = None,
     rate: int | None = None,
     timeout: int | None = None,
@@ -173,14 +230,13 @@ async def run_ffuf(
         "-w", wordlist_path,
         "-o", str(output_file),
         "-of", "json",
-        "-t", str(threads or settings.default_threads),
+        "-t", str(threads if threads is not None else min(max(settings.default_threads, 1), 40)),
         "-noninteractive",
         "-s",  # Silent mode
     ]
 
     # Add rate limiting
-    if rate or settings.default_rate:
-        cmd.extend(["-rate", str(rate or settings.default_rate)])
+    cmd.extend(["-rate", str(rate if rate is not None else min(max(settings.default_rate, 1), 100))])
 
     # Add extensions for directory fuzzing
     if extensions:
@@ -197,6 +253,8 @@ async def run_ffuf(
         cmd.extend(["-fs", str(filter_size)])
     if filter_words is not None:
         cmd.extend(["-fw", str(filter_words)])
+    if filter_lines is not None:
+        cmd.extend(["-fl", str(filter_lines)])
 
     if vhost_domain:
         cmd.extend(["-H", f"Host: FUZZ.{vhost_domain}"])
@@ -213,7 +271,7 @@ async def run_ffuf(
 
         stdout, stderr = await asyncio.wait_for(
             process.communicate(),
-            timeout=float(timeout or settings.default_timeout),
+            timeout=float(timeout if timeout is not None else min(max(settings.default_timeout, 1), 600)),
         )
 
         result.completed_at = datetime.now()
@@ -248,6 +306,8 @@ async def run_ffuf(
                 logger.error(f"Fuzzing {scan_id} failed: {stderr_text}")
 
     except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
         result.status = "timeout"
         result.error = f"Fuzzing timed out after {timeout or settings.default_timeout} seconds"
         result.completed_at = datetime.now()
@@ -517,7 +577,19 @@ async def list_tools() -> list[Tool]:
     ]
     for tool in tools:
         if tool.name in {"ffuf_dir", "ffuf_vhost", "ffuf_param"}:
-            tool.inputSchema["properties"]["wordlist"]["enum"] = sorted(WORDLISTS)
+            properties = tool.inputSchema["properties"]
+            properties["wordlist"]["enum"] = sorted(WORDLISTS)
+            properties.update({
+                "match_codes": {"type": "array", "items": {"type": "integer", "minimum": 100, "maximum": 599}, "minItems": 1, "maxItems": 16, "uniqueItems": True, "description": "Show only these HTTP statuses."},
+                "filter_codes": {"type": "array", "items": {"type": "integer", "minimum": 100, "maximum": 599}, "minItems": 1, "maxItems": 16, "uniqueItems": True, "description": "Hide these HTTP statuses."},
+                "filter_size": {"type": "integer", "minimum": 0, "maximum": 10000000, "description": "Hide this response byte count."},
+                "filter_words": {"type": "integer", "minimum": 0, "maximum": 1000000, "description": "Hide this response word count."},
+                "filter_lines": {"type": "integer", "minimum": 0, "maximum": 1000000, "description": "Hide this response line count."},
+                "threads": {"type": "integer", "minimum": 1, "maximum": 40, "default": 40},
+                "rate": {"type": "integer", "minimum": 1, "maximum": 100, "default": 1, "description": "Maximum requests per second."},
+                "timeout": {"type": "integer", "minimum": 1, "maximum": 600, "default": 600},
+            })
+            tool.inputSchema["additionalProperties"] = False
         if tool.name == "ffuf_param":
             tool.inputSchema["properties"].pop("method", None)
             tool.inputSchema["properties"].pop("data", None)
@@ -540,22 +612,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
-            url = arguments["url"]
-            if "FUZZ" not in url:
-                url = url.rstrip("/") + "/FUZZ"
-
-            extensions = arguments.get("extensions")
-            if extensions and not set(extensions).issubset(SAFE_EXTENSIONS):
-                return [TextContent(type="text", text="Extensions must be selected from the documented catalog.")]
-
             result = await run_ffuf(
-                url=url,
-                wordlist=arguments.get("wordlist", "common"),
+                **validate_scan_options(name, arguments),
                 fuzz_type="directory",
-                extensions=extensions,
-                filter_codes=arguments.get("filter_codes", [404]),
-                threads=arguments.get("threads"),
-                timeout=arguments.get("timeout"),
             )
 
             return [
@@ -574,18 +633,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
-            domain = arguments["domain"].lower()
-            if not re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?", domain):
-                return [TextContent(type="text", text="domain must be a hostname without a port or control characters.")]
-
             result = await run_ffuf(
-                url=arguments["url"],
-                wordlist=arguments.get("wordlist", "subdomains-top1mil"),
+                **validate_scan_options(name, arguments),
                 fuzz_type="vhost",
-                vhost_domain=domain,
-                filter_size=arguments.get("filter_size"),
-                threads=arguments.get("threads"),
-                timeout=arguments.get("timeout"),
             )
 
             return [
@@ -604,16 +654,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
-            if "FUZZ" not in arguments["url"]:
-                return [TextContent(type="text", text="url must contain the FUZZ placeholder for GET parameter discovery.")]
-
             result = await run_ffuf(
-                url=arguments["url"],
-                wordlist=arguments.get("wordlist", "params-top"),
+                **validate_scan_options(name, arguments),
                 fuzz_type="parameter",
-                filter_size=arguments.get("filter_size"),
-                threads=arguments.get("threads"),
-                timeout=arguments.get("timeout"),
             )
 
             return [

@@ -14,6 +14,7 @@ Tools:
 import asyncio
 import json
 import logging
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +30,7 @@ from mcp.types import (
 )
 from pydantic import BaseModel, Field, ConfigDict
 from pydantic_settings import BaseSettings
+from adapters.input_validation import bounded_int, host, strict_bool
 
 # Configure logging
 logging.basicConfig(
@@ -68,6 +70,30 @@ class FetchResult(BaseModel):
 # In-memory storage for fetch results
 fetch_results: dict[str, FetchResult] = {}
 active_fetches: set[str] = set()
+FETCH_ID = re.compile(r"[0-9a-f]{8}\Z")
+
+
+def validate_domain(domain: Any) -> str:
+    """Only one plain domain or IP may be passed to waybackurls stdin."""
+    return host(domain)
+
+
+def select_urls(urls: list[str], *, unique_urls: bool, https_only: bool) -> list[str]:
+    """Apply local, archive-result-only selection without making target requests."""
+    selected = []
+    seen = set()
+    for record in urls:
+        # waybackurls -dates prefixes a timestamp before the URL.
+        url = record.split()[-1] if record.split() else ""
+        if https_only and urlparse(url).scheme.lower() != "https":
+            continue
+        if unique_urls and record in seen:
+            continue
+        seen.add(record)
+        selected.append(record)
+        if len(selected) >= 10000:
+            break
+    return selected
 
 
 def analyze_urls(urls: list[str]) -> dict[str, Any]:
@@ -141,8 +167,21 @@ async def run_waybackurls(
     no_subs: bool = False,
     dates: bool = False,
     timeout: int | None = None,
+    unique_urls: bool = False,
+    https_only: bool = False,
 ) -> FetchResult:
     """Execute waybackurls asynchronously."""
+    domain = validate_domain(domain)
+    get_subs = strict_bool(get_subs, "get_subs")
+    no_subs = strict_bool(no_subs, "no_subs")
+    dates = strict_bool(dates, "dates")
+    unique_urls = strict_bool(unique_urls, "unique_urls")
+    https_only = strict_bool(https_only, "https_only")
+    if get_subs and no_subs:
+        raise ValueError("get_subs and no_subs cannot both be true")
+    effective_timeout = bounded_int(
+        settings.default_timeout if timeout is None else timeout, "timeout", 5, 600
+    )
     fetch_id = str(uuid.uuid4())[:8]
     output_file = Path(settings.output_dir) / f"wayback_{fetch_id}.txt"
 
@@ -166,7 +205,7 @@ async def run_waybackurls(
         cmd.append("-dates")
 
     logger.info(f"Starting waybackurls fetch {fetch_id} for domain: {domain}")
-    logger.debug(f"Command: echo {domain} | {' '.join(cmd)}")
+    logger.debug("Command: waybackurls with validated domain on stdin")
 
     try:
         process = await asyncio.create_subprocess_exec(
@@ -179,7 +218,7 @@ async def run_waybackurls(
         # Send domain to stdin
         stdout, stderr = await asyncio.wait_for(
             process.communicate(input=domain.encode()),
-            timeout=float(timeout or settings.default_timeout),
+            timeout=float(effective_timeout),
         )
 
         result.completed_at = datetime.now()
@@ -187,7 +226,10 @@ async def run_waybackurls(
         # Parse output
         stdout_text = stdout.decode()
         if stdout_text.strip():
-            urls = [line.strip() for line in stdout_text.split("\n") if line.strip()]
+            urls = select_urls(
+                [line.strip() for line in stdout_text.splitlines() if line.strip()],
+                unique_urls=unique_urls, https_only=https_only,
+            )
             result.urls = urls
             result.total_urls = len(urls)
             
@@ -213,8 +255,10 @@ async def run_waybackurls(
                 logger.error(f"Fetch {fetch_id} failed: {result.error}")
 
     except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
         result.status = "timeout"
-        result.error = f"Fetch timed out after {timeout or settings.default_timeout} seconds"
+        result.error = f"Fetch timed out after {effective_timeout} seconds"
         result.completed_at = datetime.now()
         logger.error(f"Fetch {fetch_id} timed out")
 
@@ -233,6 +277,8 @@ async def run_waybackurls(
 
 def format_fetch_summary(result: FetchResult, include_urls: bool = False, limit: int = 100) -> dict[str, Any]:
     """Format fetch result for response."""
+    include_urls = strict_bool(include_urls, "include_urls")
+    limit = bounded_int(limit, "limit", 1, 1000)
     summary = {
         "fetch_id": result.fetch_id,
         "domain": result.domain,
@@ -269,7 +315,7 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "domain": {
                         "type": "string",
-                        "description": "Domain to fetch URLs for (e.g., example.com)",
+                        "description": "Plain domain or IP (e.g., example.com); no URL or line breaks",
                     },
                     "get_subs": {
                         "type": "boolean",
@@ -286,6 +332,16 @@ async def list_tools() -> list[Tool]:
                         "description": "Show timestamps for when URLs were archived",
                         "default": False,
                     },
+                    "unique_urls": {
+                        "type": "boolean",
+                        "description": "Keep one copy of each returned archive record",
+                        "default": False,
+                    },
+                    "https_only": {
+                        "type": "boolean",
+                        "description": "Keep only archived HTTPS URLs",
+                        "default": False,
+                    },
                     "include_urls": {
                         "type": "boolean",
                         "description": "Include the actual URLs in the response (default: true)",
@@ -295,14 +351,19 @@ async def list_tools() -> list[Tool]:
                         "type": "integer",
                         "description": "Maximum number of URLs to return in response (default: 100)",
                         "default": 100,
+                        "minimum": 1,
+                        "maximum": 1000,
                     },
                     "timeout": {
                         "type": "integer",
                         "description": "Timeout in seconds",
                         "default": 300,
+                        "minimum": 5,
+                        "maximum": 600,
                     },
                 },
                 "required": ["domain"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -324,9 +385,12 @@ async def list_tools() -> list[Tool]:
                         "type": "integer",
                         "description": "Maximum number of URLs to return",
                         "default": 100,
+                        "minimum": 1,
+                        "maximum": 1000,
                     },
                 },
                 "required": ["fetch_id"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -335,6 +399,7 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {},
+                "additionalProperties": False,
             },
         ),
     ]
@@ -345,6 +410,24 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Handle tool calls."""
     try:
         if name == "fetch_wayback_urls":
+            if not isinstance(arguments, dict) or set(arguments) - {
+                "domain", "get_subs", "no_subs", "dates", "unique_urls", "https_only",
+                "include_urls", "limit", "timeout",
+            }:
+                raise ValueError("unsupported fetch option")
+            domain = validate_domain(arguments["domain"])
+            include_urls = strict_bool(arguments.get("include_urls", True), "include_urls")
+            limit = bounded_int(arguments.get("limit", 100), "limit", 1, 1000)
+            get_subs = strict_bool(arguments.get("get_subs", False), "get_subs")
+            no_subs = strict_bool(arguments.get("no_subs", False), "no_subs")
+            dates = strict_bool(arguments.get("dates", False), "dates")
+            unique_urls = strict_bool(arguments.get("unique_urls", False), "unique_urls")
+            https_only = strict_bool(arguments.get("https_only", False), "https_only")
+            if get_subs and no_subs:
+                raise ValueError("get_subs and no_subs cannot both be true")
+            timeout = bounded_int(
+                arguments.get("timeout", settings.default_timeout), "timeout", 5, 600
+            )
             if len(active_fetches) >= settings.max_concurrent_fetches:
                 return [
                     TextContent(
@@ -354,18 +437,14 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
-            domain = arguments["domain"]
-            # Clean domain input
-            domain = domain.strip().lower()
-            if domain.startswith("http://") or domain.startswith("https://"):
-                domain = urlparse(domain).netloc
-
             result = await run_waybackurls(
                 domain=domain,
-                get_subs=arguments.get("get_subs", False),
-                no_subs=arguments.get("no_subs", False),
-                dates=arguments.get("dates", False),
-                timeout=arguments.get("timeout"),
+                get_subs=get_subs,
+                no_subs=no_subs,
+                dates=dates,
+                timeout=timeout,
+                unique_urls=unique_urls,
+                https_only=https_only,
             )
 
             return [
@@ -374,8 +453,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     text=json.dumps(
                         format_fetch_summary(
                             result,
-                            include_urls=arguments.get("include_urls", True),
-                            limit=arguments.get("limit", 100),
+                            include_urls=include_urls,
+                            limit=limit,
                         ),
                         indent=2,
                     ),
@@ -383,7 +462,13 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             ]
 
         elif name == "get_fetch_results":
+            if not isinstance(arguments, dict) or set(arguments) - {"fetch_id", "include_urls", "limit"}:
+                raise ValueError("unsupported result option")
             fetch_id = arguments["fetch_id"]
+            if not isinstance(fetch_id, str) or not FETCH_ID.fullmatch(fetch_id):
+                raise ValueError("fetch_id must be an eight-character hex ID")
+            include_urls = strict_bool(arguments.get("include_urls", True), "include_urls")
+            limit = bounded_int(arguments.get("limit", 100), "limit", 1, 1000)
             result = fetch_results.get(fetch_id)
 
             if result:
@@ -393,8 +478,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                         text=json.dumps(
                             format_fetch_summary(
                                 result,
-                                include_urls=arguments.get("include_urls", True),
-                                limit=arguments.get("limit", 100),
+                                include_urls=include_urls,
+                                limit=limit,
                             ),
                             indent=2,
                         ),
@@ -406,6 +491,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                 ]
 
         elif name == "list_active_fetches":
+            if arguments != {}:
+                raise ValueError("list_active_fetches accepts no options")
             active = [
                 {
                     "fetch_id": fetch_id,

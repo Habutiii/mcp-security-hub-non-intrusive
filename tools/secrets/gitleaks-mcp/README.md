@@ -8,11 +8,13 @@ Gateway component ID: `gitleaks`.
 
 | Tool | Description |
 |---|---|
-| `gitleaks_scan_repo` | Scan a git repository for secrets and credentials. Analyzes commit history for leaked API keys, passwords, tokens, etc. |
-| `gitleaks_scan_dir` | Scan a directory for secrets without git history analysis. Useful for scanning non-git directories or specific folders. |
-| `gitleaks_detect` | Quick scan provided content (text/code) for secrets. Useful for checking config files, environment variables, etc. |
-| `get_scan_results` | Retrieve results from a previous scan by scan ID. |
+| `gitleaks_scan_repo` | Scan an approved local Git directory and its history. `timeout` is 1–300 seconds; `max_findings` is 1–50 in the response. |
+| `gitleaks_scan_dir` | Scan an approved local directory without Git history. The same bounded options apply. |
+| `gitleaks_detect` | Scan supplied text of at most 64,000 characters, with the same bounded response options. Default timeout is 60 seconds. |
+| `get_scan_results` | Retrieve a previous scan by ID, optionally including a redacted JSON report. `max_findings` limits summary findings. |
 | `list_active_scans` | List currently running scans. |
+
+Directory scans accept absolute paths under `/opt/security-hub` or `/var/lib/security-hub/gitleaks/input` only. Deployments that need a separate local input directory must mount it at the latter path. Path traversal and symlinks escaping these roots are rejected. Gitleaks receives fixed argv without a shell or agent supplied flags. Reports are redacted in memory and the temporary unredacted report file is removed after each scan. No target network requests are made by these tools.
 
 ## Use through the gateway
 

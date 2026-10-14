@@ -114,8 +114,8 @@ CAPABILITIES: tuple[Capability, ...] = (
     ),
     Capability(
         "masscan", "local", CapabilityType.BOUNDED_OBSERVATION,
-        TargetEffect.AUDIT_LOGS_ONLY, "Low-rate scan of a bounded CIDR using a fixed top-port set.",
-        frozenset({"masscan_top_ports", "get_scan_results", "list_active_scans"}), True,
+        TargetEffect.AUDIT_LOGS_ONLY, "Low-rate scan of a bounded CIDR and up to 32 selected TCP ports.",
+        frozenset({"masscan_scan", "masscan_top_ports", "get_scan_results", "list_active_scans"}), True,
         privilege_profile=PrivilegeProfile.RAW_NETWORK,
     ),
     Capability(

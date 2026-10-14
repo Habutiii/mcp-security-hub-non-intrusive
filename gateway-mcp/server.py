@@ -16,6 +16,7 @@ from contextlib import AsyncExitStack
 from dataclasses import dataclass, field
 from typing import Any
 
+from jsonschema import Draft202012Validator
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.server import Server
@@ -192,6 +193,16 @@ def text(data: Any) -> list[TextContent]:
     return [TextContent(type="text", text=json.dumps(data, indent=2, default=str))]
 
 
+def validate_child_arguments(tool: Tool, arguments: Any) -> dict[str, Any]:
+    """Enforce the advertised typed input schema and reject extra keys."""
+    if not isinstance(arguments, dict) or tool.inputSchema.get("type") != "object":
+        raise ValueError("Tool arguments must match the advertised object schema")
+    schema = {**tool.inputSchema, "additionalProperties": False}
+    if not Draft202012Validator(schema).is_valid(arguments):
+        raise ValueError("Tool arguments do not match the advertised schema")
+    return arguments
+
+
 @app.list_tools()
 async def list_tools() -> list[Tool]:
     component_ids = sorted(ENABLED_COMPONENTS)
@@ -292,10 +303,11 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             instance = await start_component(component_id)
             if tool_name not in capability.allowed_tools or tool_name not in instance.tools:
                 return text({"error": "Tool is not permitted by the reviewed capability contract"})
+            child_arguments = validate_child_arguments(instance.tools[tool_name], arguments.get("arguments"))
             async with instance.lock:
                 instance.active_calls += 1
             try:
-                result = await instance.session.call_tool(tool_name, arguments.get("arguments", {}))
+                result = await instance.session.call_tool(tool_name, child_arguments)
                 return text({"mcp_id": component_id, "tool_name": tool_name, "result": result.model_dump(mode="json")})
             finally:
                 async with instance.lock:

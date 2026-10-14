@@ -29,6 +29,7 @@ from mcp.types import (
 )
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
+from adapters.input_validation import bounded_int, host, http_url, strict_bool
 
 logging.basicConfig(
     level=logging.INFO,
@@ -78,10 +79,36 @@ active_scans: set[str] = set()
 AGGRESSION_LEVELS = {
     "stealthy": 1,
     "passive": 1,
-    "polite": 2,
-    "normal": 3,
-    "aggressive": 4,
 }
+
+
+def build_whatweb_command(
+    target: str, output_file: Path, *, aggression: str = "stealthy",
+    wait_seconds: int = 0, open_timeout: int = 10,
+    read_timeout: int = 15, no_errors: bool = False,
+) -> list[str]:
+    """Build a single-request, same-target WhatWeb argv from typed options."""
+    if aggression not in AGGRESSION_LEVELS:
+        raise ValueError("aggression must be stealthy or passive")
+    if not isinstance(target, str):
+        raise ValueError("target must be a hostname or HTTP URL")
+    if "://" in target:
+        target = http_url(target, allow_query=False)
+    else:
+        target = host(target)
+    wait_seconds = bounded_int(wait_seconds, "wait_seconds", 0, 5)
+    open_timeout = bounded_int(open_timeout, "open_timeout", 1, 15)
+    read_timeout = bounded_int(read_timeout, "read_timeout", 1, 30)
+    no_errors = strict_bool(no_errors, "no_errors")
+    cmd = [
+        "whatweb", "-a", "1", "--follow-redirect=never",
+        "--max-threads", "1", "--open-timeout", str(open_timeout),
+        "--read-timeout", str(read_timeout), "--wait", str(wait_seconds),
+        "--colour=never", "--log-json", str(output_file),
+    ]
+    if no_errors:
+        cmd.append("--no-errors")
+    return [*cmd, "--", target]
 
 
 def parse_whatweb_json(output: str) -> tuple[list[Technology], dict[str, Any]]:
@@ -119,9 +146,14 @@ def parse_whatweb_json(output: str) -> tuple[list[Technology], dict[str, Any]]:
 
 async def run_whatweb_scan(
     target: str,
-    aggression: str = "normal",
+    aggression: str = "stealthy",
     timeout: int | None = None,
+    wait_seconds: int = 0,
+    open_timeout: int = 10,
+    read_timeout: int = 15,
+    no_errors: bool = False,
 ) -> ScanResult:
+    timeout = bounded_int(timeout if timeout is not None else 120, "timeout", 1, 300)
     scan_id = str(uuid.uuid4())[:8]
     output_file = Path(settings.output_dir) / f"whatweb_{scan_id}.json"
 
@@ -133,14 +165,11 @@ async def run_whatweb_scan(
     scan_results[scan_id] = result
     active_scans.add(scan_id)
 
-    aggression_level = AGGRESSION_LEVELS.get(aggression, 3)
-
-    cmd = [
-        "whatweb",
-        "-a", str(aggression_level),
-        "--log-json", str(output_file),
-        target,
-    ]
+    cmd = build_whatweb_command(
+        target, output_file, aggression=aggression, wait_seconds=wait_seconds,
+        open_timeout=open_timeout, read_timeout=read_timeout,
+        no_errors=no_errors,
+    )
 
     logger.info(f"Starting whatweb scan {scan_id} for target: {target}")
 
@@ -153,7 +182,7 @@ async def run_whatweb_scan(
 
         stdout, stderr = await asyncio.wait_for(
             process.communicate(),
-            timeout=float(timeout or settings.default_timeout),
+            timeout=float(timeout),
         )
 
         result.completed_at = datetime.now()
@@ -174,8 +203,10 @@ async def run_whatweb_scan(
             result.error = stderr.decode()
 
     except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
         result.status = "timeout"
-        result.error = f"Scan timed out after {timeout or settings.default_timeout} seconds"
+        result.error = f"Scan timed out after {timeout} seconds"
         result.completed_at = datetime.now()
 
     except Exception as e:
@@ -229,17 +260,26 @@ async def list_tools() -> list[Tool]:
                     },
                     "aggression": {
                         "type": "string",
-                        "enum": ["stealthy", "passive", "polite", "normal", "aggressive"],
-                        "description": "Scan aggression level",
-                        "default": "normal",
+                        "enum": ["stealthy", "passive"],
+                        "description": "Single-request fingerprinting profile",
+                        "default": "stealthy",
                     },
+                    "wait_seconds": {"type": "integer", "minimum": 0, "maximum": 5, "default": 0,
+                                     "description": "Pause between connections (--wait)"},
+                    "open_timeout": {"type": "integer", "minimum": 1, "maximum": 15, "default": 10,
+                                     "description": "Connection timeout (--open-timeout)"},
+                    "read_timeout": {"type": "integer", "minimum": 1, "maximum": 30, "default": 15,
+                                     "description": "Response timeout (--read-timeout)"},
+                    "no_errors": {"type": "boolean", "default": False,
+                                  "description": "Suppress scanner error output (--no-errors)"},
                     "timeout": {
                         "type": "integer",
                         "description": "Timeout in seconds",
-                        "default": 300,
+                        "minimum": 1, "maximum": 300, "default": 120,
                     },
                 },
                 "required": ["target"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -270,8 +310,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
 
             result = await run_whatweb_scan(
                 target=arguments["target"],
-                aggression=arguments.get("aggression", "normal"),
+                aggression=arguments.get("aggression", "stealthy"),
                 timeout=arguments.get("timeout"),
+                wait_seconds=arguments.get("wait_seconds", 0),
+                open_timeout=arguments.get("open_timeout", 10),
+                read_timeout=arguments.get("read_timeout", 15),
+                no_errors=arguments.get("no_errors", False),
             )
 
             return [TextContent(type="text", text=json.dumps(format_scan_summary(result), indent=2))]

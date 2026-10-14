@@ -11,6 +11,13 @@ Gateway component ID: `nikto`.
 | `nikto_observe` | Run fixed read-only Nikto checks for files, configuration, disclosure, and software identification. |
 | `nikto_get_result` | Retrieve a stored Nikto observation result. |
 
+`nikto_observe` accepts a subset of four reviewed information-gathering check
+categories plus bounded `pause_seconds`, `request_timeout`, and `max_time`
+options. It fixes the output format and destination, disables update checks,
+and does not accept arbitrary plugins, tuning strings, paths, request methods,
+headers, or credentials. Its target must be an HTTP(S) origin URL on an
+approved port.
+
 ## Use through the gateway
 
 Build the single image from the repository root with `docker compose build`.

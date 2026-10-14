@@ -18,7 +18,7 @@ def test_default_settings_cover_every_local_component_and_tool():
     assert settings.enabled_components == set(expected)
     assert settings.enabled_tools == expected
     assert len(expected) == 13
-    assert sum(map(len, expected.values())) == 46
+    assert sum(map(len, expected.values())) == 47
 
 
 def test_switches_disable_only_selected_component_or_tool(tmp_path):

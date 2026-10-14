@@ -8,9 +8,15 @@ Gateway component ID: `masscan`.
 
 | Tool | Description |
 |---|---|
+| `masscan_scan` | Scan one bounded IP/CIDR on up to 32 selected TCP ports at 1–50 packets per second. |
 | `masscan_top_ports` | Scan the top 20 most common ports on target(s). |
 | `get_scan_results` | Retrieve results from a previous scan. |
 | `list_active_scans` | List running scans. |
+
+Both scan tools accept bounded `rate` and `timeout` options. Targets must be
+literal IP addresses or CIDRs no broader than /24 IPv4 or /64 IPv6. Port text
+is parsed as a list of TCP numbers/ranges before it becomes one argv value;
+raw flags and range syntax outside that grammar are rejected.
 
 ## Use through the gateway
 

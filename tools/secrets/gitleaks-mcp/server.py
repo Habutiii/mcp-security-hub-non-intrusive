@@ -32,6 +32,7 @@ from mcp.types import (
 )
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
+from adapters.input_validation import bounded_int, strict_bool
 
 # Configure logging
 logging.basicConfig(
@@ -53,6 +54,40 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+ALLOWED_INPUT_ROOTS = (Path("/opt/security-hub"), Path("/var/lib/security-hub/gitleaks/input"))
+MAX_CONTENT = 64_000
+
+
+def approved_directory(value: Any, *, repository: bool = False) -> str:
+    """Resolve an existing directory within a deployment-owned input root."""
+    if not isinstance(value, str) or not value or value != value.strip() or "\x00" in value:
+        raise ValueError("path must be an absolute directory within an approved input root")
+    candidate = Path(value)
+    if not candidate.is_absolute() or ".." in candidate.parts:
+        raise ValueError("path must be absolute and cannot contain traversal")
+    resolved = candidate.resolve(strict=True)
+    if not resolved.is_dir():
+        raise ValueError("scan path must be a directory")
+    if not any(resolved == root or resolved.is_relative_to(root) for root in ALLOWED_INPUT_ROOTS):
+        raise ValueError("scan path is outside approved input roots")
+    if repository and not (resolved / ".git").is_dir():
+        raise ValueError("scan path is not a git repository")
+    return str(resolved)
+
+
+def scan_options(arguments: dict[str, Any], allowed: set[str], default_timeout: int) -> tuple[int, int]:
+    if not isinstance(arguments, dict) or arguments.keys() - allowed:
+        raise ValueError("unsupported tool option")
+    timeout = bounded_int(arguments.get("timeout", default_timeout), "timeout", 1, 300)
+    max_findings = bounded_int(arguments.get("max_findings", 50), "max_findings", 1, 50)
+    return timeout, max_findings
+
+
+def safe_raw_findings(findings: list["SecretFinding"]) -> str:
+    """Never retain or return Gitleaks' unredacted report content."""
+    return json.dumps([{"RuleID": f.rule_id, "Description": f.description,
+                        "Secret": f.secret, "File": f.file, "StartLine": f.line}
+                       for f in findings])
 
 
 class SecretFinding(BaseModel):
@@ -176,7 +211,7 @@ async def run_gitleaks_scan(
 
         stdout, stderr = await asyncio.wait_for(
             process.communicate(),
-            timeout=float(timeout or settings.default_timeout),
+            timeout=float(timeout),
         )
 
         result.completed_at = datetime.now()
@@ -184,8 +219,8 @@ async def run_gitleaks_scan(
         # Read output file if exists
         if output_file.exists():
             output_content = output_file.read_text()
-            result.raw_output = output_content
             result.findings = parse_gitleaks_json(output_content)
+            result.raw_output = safe_raw_findings(result.findings)
         else:
             # No findings
             result.findings = []
@@ -214,8 +249,10 @@ async def run_gitleaks_scan(
                 logger.warning(f"Scan {scan_id} warnings: {stderr_text}")
 
     except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
         result.status = "timeout"
-        result.error = f"Scan timed out after {timeout or settings.default_timeout} seconds"
+        result.error = f"Scan timed out after {timeout} seconds"
         result.completed_at = datetime.now()
         logger.error(f"Scan {scan_id} timed out")
 
@@ -226,6 +263,7 @@ async def run_gitleaks_scan(
         logger.exception(f"Scan {scan_id} error: {e}")
 
     finally:
+        output_file.unlink(missing_ok=True)
         active_scans.discard(scan_id)
         scan_results[scan_id] = result
 
@@ -271,15 +309,15 @@ async def scan_content(content: str, timeout: int | None = None) -> ScanResult:
 
         await asyncio.wait_for(
             process.communicate(),
-            timeout=float(timeout or settings.default_timeout),
+            timeout=float(timeout),
         )
 
         result.completed_at = datetime.now()
 
         if output_file.exists():
             output_content = output_file.read_text()
-            result.raw_output = output_content
             result.findings = parse_gitleaks_json(output_content)
+            result.raw_output = safe_raw_findings(result.findings)
 
         rules_triggered = {}
         for finding in result.findings:
@@ -294,8 +332,10 @@ async def scan_content(content: str, timeout: int | None = None) -> ScanResult:
         result.status = "completed"
 
     except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
         result.status = "timeout"
-        result.error = f"Scan timed out"
+        result.error = f"Scan timed out after {timeout} seconds"
         result.completed_at = datetime.now()
 
     except Exception as e:
@@ -304,6 +344,7 @@ async def scan_content(content: str, timeout: int | None = None) -> ScanResult:
         result.completed_at = datetime.now()
 
     finally:
+        output_file.unlink(missing_ok=True)
         active_scans.discard(scan_id)
         scan_results[scan_id] = result
         # Clean up temp file
@@ -312,10 +353,10 @@ async def scan_content(content: str, timeout: int | None = None) -> ScanResult:
     return result
 
 
-def format_scan_summary(result: ScanResult) -> dict[str, Any]:
+def format_scan_summary(result: ScanResult, *, max_findings: int = 50) -> dict[str, Any]:
     """Format scan result for response."""
     findings_summary = []
-    for finding in result.findings[:50]:  # Limit to 50 findings
+    for finding in result.findings[:max_findings]:
         findings_summary.append({
             "rule_id": finding.rule_id,
             "description": finding.description,
@@ -360,9 +401,13 @@ async def list_tools() -> list[Tool]:
                         "type": "integer",
                         "description": "Scan timeout in seconds",
                         "default": 300,
+                        "minimum": 1,
+                        "maximum": 300,
                     },
+                    "max_findings": {"type": "integer", "minimum": 1, "maximum": 50, "default": 50},
                 },
                 "required": ["repo_path"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -380,9 +425,13 @@ async def list_tools() -> list[Tool]:
                         "type": "integer",
                         "description": "Scan timeout in seconds",
                         "default": 300,
+                        "minimum": 1,
+                        "maximum": 300,
                     },
+                    "max_findings": {"type": "integer", "minimum": 1, "maximum": 50, "default": 50},
                 },
                 "required": ["dir_path"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -395,14 +444,20 @@ async def list_tools() -> list[Tool]:
                     "content": {
                         "type": "string",
                         "description": "Text content to scan for secrets",
+                        "minLength": 1,
+                        "maxLength": 64000,
                     },
                     "timeout": {
                         "type": "integer",
                         "description": "Scan timeout in seconds",
                         "default": 60,
+                        "minimum": 1,
+                        "maximum": 300,
                     },
+                    "max_findings": {"type": "integer", "minimum": 1, "maximum": 50, "default": 50},
                 },
                 "required": ["content"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -417,11 +472,13 @@ async def list_tools() -> list[Tool]:
                     },
                     "include_raw": {
                         "type": "boolean",
-                        "description": "Include raw gitleaks JSON output",
+                        "description": "Include a redacted JSON report with only safe finding fields",
                         "default": False,
                     },
+                    "max_findings": {"type": "integer", "minimum": 1, "maximum": 50, "default": 50},
                 },
                 "required": ["scan_id"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -430,6 +487,7 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {},
+                "additionalProperties": False,
             },
         ),
     ]
@@ -440,6 +498,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Handle tool calls."""
     try:
         if name == "gitleaks_scan_repo":
+            timeout, max_findings = scan_options(arguments, {"repo_path", "timeout", "max_findings"}, 300)
             if len(active_scans) >= settings.max_concurrent_scans:
                 return [
                     TextContent(
@@ -448,35 +507,24 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
-            repo_path = arguments["repo_path"]
-            if not Path(repo_path).exists():
-                return [
-                    TextContent(type="text", text=f"Repository not found: {repo_path}")
-                ]
-
-            if not (Path(repo_path) / ".git").exists():
-                return [
-                    TextContent(
-                        type="text",
-                        text=f"Not a git repository: {repo_path}. Use gitleaks_scan_dir for non-git directories.",
-                    )
-                ]
+            repo_path = approved_directory(arguments.get("repo_path"), repository=True)
 
             result = await run_gitleaks_scan(
                 target=repo_path,
                 scan_type="repo",
-                timeout=arguments.get("timeout"),
+                timeout=timeout,
                 no_git=False,
             )
 
             return [
                 TextContent(
                     type="text",
-                    text=json.dumps(format_scan_summary(result), indent=2),
+                    text=json.dumps(format_scan_summary(result, max_findings=max_findings), indent=2),
                 )
             ]
 
         elif name == "gitleaks_scan_dir":
+            timeout, max_findings = scan_options(arguments, {"dir_path", "timeout", "max_findings"}, 300)
             if len(active_scans) >= settings.max_concurrent_scans:
                 return [
                     TextContent(
@@ -485,27 +533,24 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
-            dir_path = arguments["dir_path"]
-            if not Path(dir_path).exists():
-                return [
-                    TextContent(type="text", text=f"Directory not found: {dir_path}")
-                ]
+            dir_path = approved_directory(arguments.get("dir_path"))
 
             result = await run_gitleaks_scan(
                 target=dir_path,
                 scan_type="dir",
-                timeout=arguments.get("timeout"),
+                timeout=timeout,
                 no_git=True,
             )
 
             return [
                 TextContent(
                     type="text",
-                    text=json.dumps(format_scan_summary(result), indent=2),
+                    text=json.dumps(format_scan_summary(result, max_findings=max_findings), indent=2),
                 )
             ]
 
         elif name == "gitleaks_detect":
+            timeout, max_findings = scan_options(arguments, {"content", "timeout", "max_findings"}, 60)
             if len(active_scans) >= settings.max_concurrent_scans:
                 return [
                     TextContent(
@@ -514,31 +559,35 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
-            content = arguments["content"]
-            if not content.strip():
-                return [
-                    TextContent(type="text", text="Content cannot be empty")
-                ]
+            content = arguments.get("content")
+            if not isinstance(content, str) or not content.strip() or len(content) > MAX_CONTENT:
+                raise ValueError(f"content must contain 1 to {MAX_CONTENT} characters")
 
             result = await scan_content(
                 content=content,
-                timeout=arguments.get("timeout", 60),
+                timeout=timeout,
             )
 
             return [
                 TextContent(
                     type="text",
-                    text=json.dumps(format_scan_summary(result), indent=2),
+                    text=json.dumps(format_scan_summary(result, max_findings=max_findings), indent=2),
                 )
             ]
 
         elif name == "get_scan_results":
-            scan_id = arguments["scan_id"]
+            if not isinstance(arguments, dict) or arguments.keys() - {"scan_id", "include_raw", "max_findings"}:
+                raise ValueError("unsupported tool option")
+            scan_id = arguments.get("scan_id")
+            if not isinstance(scan_id, str) or len(scan_id) != 8 or any(c not in "0123456789abcdef" for c in scan_id):
+                raise ValueError("scan_id must be eight lowercase hexadecimal characters")
+            include_raw = strict_bool(arguments.get("include_raw", False), "include_raw")
+            max_findings = bounded_int(arguments.get("max_findings", 50), "max_findings", 1, 50)
             result = scan_results.get(scan_id)
 
             if result:
-                output = format_scan_summary(result)
-                if arguments.get("include_raw") and result.raw_output:
+                output = format_scan_summary(result, max_findings=max_findings)
+                if include_raw and result.raw_output:
                     output["raw_output"] = result.raw_output[:10000]
                 return [
                     TextContent(
@@ -552,6 +601,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                 ]
 
         elif name == "list_active_scans":
+            if not isinstance(arguments, dict) or arguments:
+                raise ValueError("unsupported tool option")
             active = [
                 {
                     "scan_id": scan_id,

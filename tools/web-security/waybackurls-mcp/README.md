@@ -12,6 +12,21 @@ Gateway component ID: `waybackurls`.
 | `get_fetch_results` | Retrieve results from a previous waybackurls fetch by fetch ID. |
 | `list_active_fetches` | List currently running waybackurls fetches. |
 
+## Options and limits
+
+`fetch_wayback_urls` accepts a plain hostname or IP in `domain` (no URL,
+whitespace, line break, or command text). The binary receives this value on
+stdin. Its only selectable flags are `get_subs`, `no_subs`, and `dates`, each a
+boolean; `get_subs` and `no_subs` cannot be combined. The timeout is 5–600
+seconds. `unique_urls` removes duplicate archive records and `https_only`
+selects archived HTTPS URLs locally, without contacting those URLs. At most
+10,000 selected records are retained from one fetch.
+
+Both `fetch_wayback_urls` and `get_fetch_results` accept `include_urls` as a
+boolean and `limit` from 1 to 1000 to bound the URLs returned in one response.
+The default limit is 100. Agent supplied values are checked when the call runs;
+arbitrary flags are rejected.
+
 ## Use through the gateway
 
 Build the single image from the repository root with `docker compose build`.

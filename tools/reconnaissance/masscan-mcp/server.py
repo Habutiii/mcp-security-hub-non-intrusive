@@ -13,6 +13,7 @@ Tools:
 """
 
 import asyncio
+import ipaddress
 import json
 import logging
 import uuid
@@ -25,6 +26,7 @@ from mcp.server.stdio import stdio_server
 from mcp.types import Resource, TextContent, Tool
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
+from adapters.input_validation import bounded_int, tcp_ports
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,7 +39,6 @@ class Settings(BaseSettings):
     output_dir: str = Field(default="/app/output", alias="MASSCAN_OUTPUT_DIR")
     default_timeout: int = Field(default=600, alias="MASSCAN_TIMEOUT")
     max_concurrent_scans: int = Field(default=1, alias="MASSCAN_MAX_CONCURRENT")
-    default_rate: int = Field(default=1000, alias="MASSCAN_RATE")
 
     class Config:
         env_prefix = "MASSCAN_"
@@ -72,8 +73,29 @@ scan_results: dict[str, ScanResult] = {}
 active_scans: set[str] = set()
 
 TOP_PORTS = "21,22,23,25,53,80,110,111,135,139,143,443,445,993,995,1723,3306,3389,5900,8080"
-SAFE_MASSCAN_TOOLS = frozenset({"masscan_top_ports", "get_scan_results", "list_active_scans"})
+SAFE_MASSCAN_TOOLS = frozenset({"masscan_scan", "masscan_top_ports", "get_scan_results", "list_active_scans"})
 MAX_SAFE_RATE = 50
+
+
+def bounded_target(value: Any) -> str:
+    """Limit Masscan to one literal IP or a /24 IPv4 or /64 IPv6 range."""
+    if not isinstance(value, str) or not value or value != value.strip():
+        raise ValueError("targets must be one IP address or bounded CIDR")
+    try:
+        network = ipaddress.ip_network(value, strict=False)
+    except ValueError as error:
+        raise ValueError("targets must be one IP address or bounded CIDR") from error
+    if network.prefixlen < (24 if network.version == 4 else 64):
+        raise ValueError("Masscan target range exceeds /24 IPv4 or /64 IPv6")
+    return value
+
+
+def build_masscan_command(targets: str, ports: str, rate: int, output_file: Path) -> list[str]:
+    return [
+        "masscan", bounded_target(targets), "-p", tcp_ports(ports, max_ports=32),
+        "--rate", str(bounded_int(rate, "rate", 1, MAX_SAFE_RATE)),
+        "-oJ", str(output_file),
+    ]
 
 
 def parse_masscan_json(output: str) -> list[PortResult]:
@@ -102,6 +124,10 @@ async def run_masscan(
     rate: int | None = None,
     timeout: int | None = None,
 ) -> ScanResult:
+    targets = bounded_target(targets)
+    ports = tcp_ports(ports, max_ports=32)
+    rate = bounded_int(rate if rate is not None else MAX_SAFE_RATE, "rate", 1, MAX_SAFE_RATE)
+    timeout = bounded_int(timeout if timeout is not None else 600, "timeout", 1, 600)
     scan_id = str(uuid.uuid4())[:8]
     output_file = Path(settings.output_dir) / f"masscan_{scan_id}.json"
 
@@ -114,13 +140,7 @@ async def run_masscan(
     scan_results[scan_id] = result
     active_scans.add(scan_id)
 
-    cmd = [
-        "masscan",
-        targets,
-        "-p", ports,
-        "--rate", str(rate or settings.default_rate),
-        "-oJ", str(output_file),
-    ]
+    cmd = build_masscan_command(targets, ports, rate, output_file)
 
     logger.info(f"Starting masscan {scan_id} for targets: {targets}")
 
@@ -133,7 +153,7 @@ async def run_masscan(
 
         stdout, stderr = await asyncio.wait_for(
             process.communicate(),
-            timeout=float(timeout or settings.default_timeout),
+            timeout=float(timeout),
         )
 
         result.completed_at = datetime.now()
@@ -156,6 +176,8 @@ async def run_masscan(
         result.status = "completed"
 
     except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
         result.status = "timeout"
         result.error = f"Scan timed out"
         result.completed_at = datetime.now()
@@ -199,24 +221,25 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "targets": {
                         "type": "string",
-                        "description": "Target IP, range, or CIDR (e.g., 10.0.0.1, 10.0.0.0/24, 10.0.0.1-10.0.0.255)",
+                        "description": "One literal IP or CIDR no broader than /24 IPv4 or /64 IPv6",
                     },
                     "ports": {
                         "type": "string",
-                        "description": "Ports to scan (e.g., 80, 80,443, 1-1000, 0-65535)",
+                        "description": "TCP ports/ranges covering at most 32 ports (e.g. 80,443,8000-8010)",
                     },
                     "rate": {
                         "type": "integer",
-                        "description": "Packets per second (default 1000, max depends on network)",
-                        "default": 1000,
+                        "description": "Maximum packets per second",
+                        "minimum": 1, "maximum": MAX_SAFE_RATE, "default": MAX_SAFE_RATE,
                     },
                     "timeout": {
                         "type": "integer",
                         "description": "Timeout in seconds",
-                        "default": 600,
+                        "minimum": 1, "maximum": 600, "default": 600,
                     },
                 },
                 "required": ["targets", "ports"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -227,10 +250,13 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "targets": {
                         "type": "string",
-                        "description": "Target IP, range, or CIDR",
+                        "description": "One literal IP or CIDR no broader than /24 IPv4 or /64 IPv6",
                     },
+                    "rate": {"type": "integer", "minimum": 1, "maximum": MAX_SAFE_RATE, "default": MAX_SAFE_RATE},
+                    "timeout": {"type": "integer", "minimum": 1, "maximum": 600, "default": 600},
                 },
                 "required": ["targets"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -255,7 +281,7 @@ async def list_tools() -> list[Tool]:
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     try:
         if name not in SAFE_MASSCAN_TOOLS:
-            return [TextContent(type="text", text="Masscan custom ports, user-selected rates, and broad scans are disabled.")]
+            return [TextContent(type="text", text="Masscan tool is not permitted.")]
         if name == "masscan_scan":
             if len(active_scans) >= settings.max_concurrent_scans:
                 return [TextContent(type="text", text="Max concurrent scans reached.")]
@@ -275,7 +301,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             result = await run_masscan(
                 targets=arguments["targets"],
                 ports=TOP_PORTS,
-                rate=min(settings.default_rate, MAX_SAFE_RATE),
+                rate=arguments.get("rate", MAX_SAFE_RATE),
+                timeout=arguments.get("timeout", 600),
             )
             return [TextContent(type="text", text=json.dumps(format_scan_summary(result), indent=2))]
 

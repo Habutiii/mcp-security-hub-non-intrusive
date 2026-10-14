@@ -7,6 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from mcp.types import Tool
 
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "gateway-mcp"))
@@ -45,7 +46,11 @@ async def test_targetless_result_query_does_not_require_target(monkeypatch):
             return SimpleNamespace(model_dump=lambda **_kwargs: {"content": []})
 
     instance = SimpleNamespace(
-        session=Session(), tools={"get_scan_results": object()},
+        session=Session(), tools={"get_scan_results": Tool(
+            name="get_scan_results", description="Read stored scan",
+            inputSchema={"type": "object", "properties": {"scan_id": {"type": "string"}},
+                         "required": ["scan_id"]},
+        )},
         lock=asyncio.Lock(), active_calls=0, last_used=0,
     )
 

@@ -12,6 +12,12 @@ Gateway component ID: `whatweb`.
 | `get_scan_results` | Retrieve results from a previous scan by scan ID. |
 | `list_active_scans` | List currently running scans. |
 
+`whatweb_scan` exposes typed `wait_seconds`, `open_timeout`, `read_timeout`,
+`no_errors`, and `timeout` options. The adapter fixes WhatWeb to its
+single-request aggression level, one scanner thread, and no redirect following.
+Targets are passed as one argv element after `--`; arbitrary plugins, headers,
+credentials, and raw flags are unavailable.
+
 ## Use through the gateway
 
 Build the single image from the repository root with `docker compose build`.

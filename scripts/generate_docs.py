@@ -28,7 +28,7 @@ OUTPUT_DIR = PROJECT_ROOT / "docs"
 
 def parse_readme_tables(readme_path: Path) -> dict:
     """Parse MCP server tables from main README.md."""
-    content = readme_path.read_text()
+    content = readme_path.read_text(encoding="utf-8")
 
     servers = []
     current_category = None
@@ -74,7 +74,7 @@ def parse_readme_tables(readme_path: Path) -> dict:
 
 def parse_docker_compose(compose_path: Path) -> dict:
     """Parse service details from docker-compose.yml."""
-    content = compose_path.read_text()
+    content = compose_path.read_text(encoding="utf-8")
     data = yaml.safe_load(content)
 
     services = {}
@@ -99,7 +99,7 @@ def parse_mcp_readme(readme_path: Path) -> dict:
     if not readme_path.exists():
         return {}
 
-    content = readme_path.read_text()
+    content = readme_path.read_text(encoding="utf-8")
 
     # Extract tools from table
     tools = []
@@ -216,7 +216,7 @@ def generate_site():
     (OUTPUT_DIR / 'js').mkdir(exist_ok=True)
 
     # Write HTML
-    (OUTPUT_DIR / 'index.html').write_text(html)
+    (OUTPUT_DIR / 'index.html').write_text(html, encoding="utf-8")
     print(f"  Generated: {OUTPUT_DIR / 'index.html'}")
 
     # Copy static assets
@@ -224,17 +224,17 @@ def generate_site():
     js_src = TEMPLATES_DIR / 'app.js'
 
     if css_src.exists():
-        (OUTPUT_DIR / 'css' / 'style.css').write_text(css_src.read_text())
+        (OUTPUT_DIR / 'css' / 'style.css').write_text(css_src.read_text(encoding="utf-8"), encoding="utf-8")
         print(f"  Copied: {OUTPUT_DIR / 'css' / 'style.css'}")
 
     if js_src.exists():
-        (OUTPUT_DIR / 'js' / 'app.js').write_text(js_src.read_text())
+        (OUTPUT_DIR / 'js' / 'app.js').write_text(js_src.read_text(encoding="utf-8"), encoding="utf-8")
         print(f"  Copied: {OUTPUT_DIR / 'js' / 'app.js'}")
 
     # Copy favicon
     favicon_src = TEMPLATES_DIR / 'favicon.svg'
     if favicon_src.exists():
-        (OUTPUT_DIR / 'favicon.svg').write_text(favicon_src.read_text())
+        (OUTPUT_DIR / 'favicon.svg').write_text(favicon_src.read_text(encoding="utf-8"), encoding="utf-8")
         print(f"  Copied: {OUTPUT_DIR / 'favicon.svg'}")
 
     # Generate JSON data for API access
@@ -246,7 +246,7 @@ def generate_site():
             'total_tools': sum(int(re.sub(r'[^\d]', '', str(s.get('tools_count') or '0')) or 0) for s in servers if s.get('tools_count')),
         }
     }
-    (OUTPUT_DIR / 'data.json').write_text(json.dumps(json_data, indent=2))
+    (OUTPUT_DIR / 'data.json').write_text(json.dumps(json_data, indent=2), encoding="utf-8")
     print(f"  Generated: {OUTPUT_DIR / 'data.json'}")
 
     print(f"\nDone! Open {OUTPUT_DIR / 'index.html'} to view the site.")

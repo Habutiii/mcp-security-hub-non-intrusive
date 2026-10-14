@@ -2,6 +2,15 @@
 
 Bounded GET discovery with reviewed wordlists.
 
+The three scanning tools accept typed MCP options for `match_codes`,
+`filter_codes`, `filter_size`, `filter_words`, and `filter_lines` to select
+or hide responses. `ffuf_dir` also accepts reviewed `extensions`. The
+`threads` option is limited to 1–40, `rate` to 1–100 requests per second,
+and `timeout` to 1–600 seconds. If omitted, the rate defaults to the bounded
+deployment setting (one request per second when unset). Agent values are validated
+before they are passed as individual ffuf arguments. Free-form flags, request
+bodies, HTTP methods, headers, and wordlist paths are not accepted.
+
 Gateway component ID: `ffuf`.
 
 ## Tools

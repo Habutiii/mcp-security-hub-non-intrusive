@@ -52,7 +52,7 @@ or malformed settings are rejected.
 ## Available MCP servers
 
 These 13 servers are implemented in this repository and packaged in the one
-gateway image. The 46 tool bindings below are the reviewed gateway surface;
+gateway image. The 47 tool bindings below are the reviewed gateway surface;
 individual switches can reduce the active set.
 
 ### Reconnaissance (5 servers)
@@ -62,7 +62,7 @@ individual switches can reduce the active set.
 | [nmap-mcp](./tools/reconnaissance/nmap-mcp) | 7 | Scoped port and service observation with fixed NSE scripts |
 | [pd-tools-mcp](./tools/reconnaissance/pd-tools-mcp) | 5 | Bounded ProjectDiscovery discovery adapter |
 | [whatweb-mcp](./tools/reconnaissance/whatweb-mcp) | 3 | HTTP technology fingerprinting |
-| [masscan-mcp](./tools/reconnaissance/masscan-mcp) | 3 | Bounded top-port scanning and result access |
+| [masscan-mcp](./tools/reconnaissance/masscan-mcp) | 4 | Bounded custom-port or top-port scanning and result access |
 | [externalattacker-mcp](./tools/reconnaissance/externalattacker-mcp) | 5 | Bounded external attack-surface observation |
 
 ### Web Security (4 servers)

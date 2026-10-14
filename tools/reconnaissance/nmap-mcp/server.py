@@ -15,10 +15,9 @@ Tools:
 """
 
 import asyncio
+import ipaddress
 import json
 import logging
-import os
-import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -34,6 +33,7 @@ from mcp.types import (
 )
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
+from adapters.input_validation import bounded_int, host, strict_bool, tcp_ports
 
 # Configure logging
 logging.basicConfig(
@@ -80,10 +80,73 @@ active_scans: set[str] = set()
 # category (such as "default" or "vuln"), because categories can include
 # state-changing scripts as Nmap evolves.
 SAFE_NSE_SCRIPTS = frozenset({
-    "banner", "dns-brute", "dns-recursion", "http-headers", "http-methods",
+    "banner", "dns-recursion", "http-headers", "http-methods",
     "http-robots.txt", "http-server-header", "http-title", "ssh-hostkey",
     "ssl-cert", "ssl-enum-ciphers", "ssl-known-key", "ssl-date",
 })
+
+
+def build_nmap_command(
+    target: str,
+    scan_type: str,
+    xml_output: Path,
+    txt_output: Path,
+    *,
+    ports: str | None = None,
+    scripts: list[str] | None = None,
+    timing: int = 3,
+    max_rate: int = 25,
+    max_retries: int = 1,
+    show_reasons: bool = False,
+    open_only: bool = False,
+    version_intensity: int = 3,
+) -> list[str]:
+    """Build an explicit argv after validating every agent-controlled value."""
+    target = host(target, allow_cidr=True)
+    if "/" in target:
+        network = ipaddress.ip_network(target)
+        if network.num_addresses > 256:
+            raise ValueError("target CIDR may contain at most 256 addresses")
+    if scan_type not in {"port", "service", "os", "script", "quick"}:
+        raise ValueError("unsupported scan type")
+    timing = bounded_int(timing, "timing", 0, 3)
+    max_rate = bounded_int(max_rate, "max_rate", 1, 50)
+    max_retries = bounded_int(max_retries, "max_retries", 0, 2)
+    show_reasons = strict_bool(show_reasons, "show_reasons")
+    open_only = strict_bool(open_only, "open_only")
+    version_intensity = bounded_int(version_intensity, "version_intensity", 0, 5)
+    if ports is not None:
+        if scan_type == "quick":
+            raise ValueError("quick_scan uses its fixed common-port selection")
+        ports = tcp_ports(ports, max_ports=1024)
+    if scripts is not None:
+        if scan_type != "script" or not isinstance(scripts, list) or not 1 <= len(scripts) <= 4 or any(
+            not isinstance(script, str) or script not in SAFE_NSE_SCRIPTS for script in scripts
+        ):
+            raise ValueError("choose 1 to 4 reviewed read-only NSE scripts")
+    if scan_type == "script" and not scripts:
+        raise ValueError("choose 1 to 4 reviewed read-only NSE scripts")
+
+    cmd = ["nmap", "-oX", str(xml_output), "-oN", str(txt_output), f"-T{timing}",
+           "--max-rate", str(max_rate), "--max-retries", str(max_retries)]
+    if scan_type == "port":
+        cmd.append("-sS")
+    elif scan_type == "service":
+        cmd.extend(["-sV", "--version-intensity", str(version_intensity)])
+    elif scan_type == "os":
+        cmd.append("-O")
+    elif scan_type == "script":
+        cmd.extend(["--script", ",".join(scripts)])
+    elif scan_type == "quick":
+        cmd.extend(["-F", "-sV", "--version-intensity", str(version_intensity)])
+    if ports is not None:
+        cmd.extend(["-p", ports])
+    if show_reasons:
+        cmd.append("--reason")
+    if open_only:
+        cmd.append("--open")
+    cmd.extend(["--", target])
+    return cmd
 
 
 def parse_nmap_xml(xml_path: Path) -> dict[str, Any]:
@@ -198,11 +261,25 @@ async def run_nmap_scan(
     scripts: list[str] | None = None,
     timing: int = 3,
     timeout: int | None = None,
+    max_rate: int = 25,
+    max_retries: int = 1,
+    show_reasons: bool = False,
+    open_only: bool = False,
+    version_intensity: int = 3,
 ) -> ScanResult:
     """Execute an nmap scan asynchronously."""
+    effective_timeout = bounded_int(
+        settings.default_timeout if timeout is None else timeout, "timeout", 10, 600
+    )
     scan_id = str(uuid.uuid4())[:8]
     xml_output = Path(settings.output_dir) / f"scan_{scan_id}.xml"
     txt_output = Path(settings.output_dir) / f"scan_{scan_id}.txt"
+    cmd = build_nmap_command(
+        target, scan_type, xml_output, txt_output, ports=ports, scripts=scripts,
+        timing=timing, max_rate=max_rate, max_retries=max_retries,
+        show_reasons=show_reasons, open_only=open_only,
+        version_intensity=version_intensity,
+    )
 
     result = ScanResult(
         scan_id=scan_id,
@@ -212,32 +289,6 @@ async def run_nmap_scan(
     )
     scan_results[scan_id] = result
     active_scans.add(scan_id)
-
-    # Build nmap command
-    cmd = ["nmap", "-oX", str(xml_output), "-oN", str(txt_output)]
-
-    # Add timing template
-    cmd.append(f"-T{timing}")
-
-    # Add scan type specific options
-    if scan_type == "port":
-        cmd.append("-sS")  # SYN scan (requires root/cap)
-    elif scan_type == "service":
-        cmd.extend(["-sV", "--version-intensity", "5"])
-    elif scan_type == "os":
-        cmd.append("-O")
-    elif scan_type == "script":
-        if scripts:
-            cmd.extend(["--script", ",".join(scripts)])
-    elif scan_type == "quick":
-        cmd.extend(["-F", "-sV"])  # Fast scan with version detection
-
-    # Add port specification
-    if ports:
-        cmd.extend(["-p", ports])
-
-    # Add target
-    cmd.extend(["--", target])
 
     logger.info(f"Starting {scan_type} scan {scan_id} for target: {target}")
     logger.debug(f"Command: {' '.join(cmd)}")
@@ -251,7 +302,7 @@ async def run_nmap_scan(
 
         stdout, stderr = await asyncio.wait_for(
             process.communicate(),
-            timeout=float(timeout or settings.default_timeout),
+            timeout=float(effective_timeout),
         )
 
         result.completed_at = datetime.now()
@@ -276,8 +327,10 @@ async def run_nmap_scan(
             logger.error(f"Scan {scan_id} failed: {result.error}")
 
     except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
         result.status = "timeout"
-        result.error = f"Scan timed out after {timeout or settings.default_timeout} seconds"
+        result.error = f"Scan timed out after {effective_timeout} seconds"
         result.completed_at = datetime.now()
         logger.error(f"Scan {scan_id} timed out")
 
@@ -336,124 +389,69 @@ app = Server("nmap-mcp")
 @app.list_tools()
 async def list_tools() -> list[Tool]:
     """List available tools."""
+    target = {"type": "string", "description": "Hostname, IP, or CIDR of at most 256 addresses"}
+    ports = {"type": "string", "description": "TCP port list or ranges covering at most 1024 ports"}
+    common = {
+        "timing": {"type": "integer", "minimum": 0, "maximum": 3, "default": 3},
+        "timeout": {"type": "integer", "minimum": 10, "maximum": 600, "default": 300},
+        "max_rate": {"type": "integer", "minimum": 1, "maximum": 50, "default": 25,
+                     "description": "Maximum packets per second"},
+        "max_retries": {"type": "integer", "minimum": 0, "maximum": 2, "default": 1},
+        "show_reasons": {"type": "boolean", "default": False,
+                         "description": "Include Nmap's reason for each state"},
+        "open_only": {"type": "boolean", "default": False,
+                      "description": "Report only open ports"},
+    }
+    version = {"version_intensity": {"type": "integer", "minimum": 0, "maximum": 5,
+                                      "default": 3,
+                                      "description": "Bounded service probe intensity"}}
     return [
         Tool(
             name="port_scan",
-            description="Scan ports on a target host or network. "
-            "Discovers open ports using SYN scan.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "target": {
-                        "type": "string",
-                        "description": "Target IP, hostname, or CIDR range (e.g., 192.168.1.1, example.com, 10.0.0.0/24)",
-                    },
-                    "ports": {
-                        "type": "string",
-                        "description": "Port specification (e.g., '22,80,443', '1-1000', 'U:53,T:21-25,80')",
-                    },
-                    "timing": {
-                        "type": "integer",
-                        "description": "Timing template 0-5 (0=paranoid, 3=normal, 5=insane)",
-                        "default": 3,
-                        "minimum": 0,
-                        "maximum": 5,
-                    },
-                    "timeout": {
-                        "type": "integer",
-                        "description": "Scan timeout in seconds",
-                        "default": 300,
-                    },
-                },
-                "required": ["target"],
-            },
+            description="Bounded TCP SYN port discovery.",
+            inputSchema={"type": "object", "properties": {"target": target, "ports": ports, **common},
+                         "required": ["target"], "additionalProperties": False},
         ),
         Tool(
             name="service_scan",
-            description="Detect service versions on target ports. "
-            "Identifies software and versions running on open ports.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "target": {
-                        "type": "string",
-                        "description": "Target IP or hostname",
-                    },
-                    "ports": {
-                        "type": "string",
-                        "description": "Port specification (default: common ports)",
-                    },
-                    "timeout": {
-                        "type": "integer",
-                        "description": "Scan timeout in seconds",
-                        "default": 300,
-                    },
-                },
-                "required": ["target"],
-            },
+            description="Bounded service version detection.",
+            inputSchema={"type": "object", "properties": {"target": target, "ports": ports, **common, **version},
+                         "required": ["target"], "additionalProperties": False},
         ),
         Tool(
             name="os_detection",
-            description="Fingerprint the operating system of the target. "
-            "Requires at least one open and one closed port.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "target": {
-                        "type": "string",
-                        "description": "Target IP or hostname",
-                    },
-                    "timeout": {
-                        "type": "integer",
-                        "description": "Scan timeout in seconds",
-                        "default": 300,
-                    },
-                },
-                "required": ["target"],
-            },
+            description="Bounded operating-system fingerprinting.",
+            inputSchema={"type": "object", "properties": {"target": target, "ports": ports, **common},
+                         "required": ["target"], "additionalProperties": False},
         ),
         Tool(
             name="script_scan",
-            description="Run NSE (Nmap Scripting Engine) scripts against target. "
-            "Scripts can detect vulnerabilities, gather information, and more.",
+            description="Run up to four reviewed information-gathering NSE scripts.",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "target": {
-                        "type": "string",
-                        "description": "Target IP or hostname",
-                    },
+                    "target": target,
                     "scripts": {
                         "type": "array",
                         "items": {"type": "string", "enum": sorted(SAFE_NSE_SCRIPTS)},
-                        "description": "Reviewed read-only NSE scripts.",
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Reviewed read-only NSE scripts",
                     },
-                    "ports": {
-                        "type": "string",
-                        "description": "Port specification",
-                    },
-                    "timeout": {
-                        "type": "integer",
-                        "description": "Scan timeout in seconds",
-                        "default": 300,
-                    },
+                    "ports": ports,
+                    **common,
                 },
-                "required": ["target"],
+                "required": ["target", "scripts"],
+                "additionalProperties": False,
             },
         ),
         Tool(
             name="quick_scan",
             description="Fast scan of the 100 most common ports with service detection.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "target": {
-                        "type": "string",
-                        "description": "Target IP or hostname",
-                    },
-                },
-                "required": ["target"],
-            },
+            inputSchema={"type": "object", "properties": {"target": target, **common,
+                         "timeout": {"type": "integer", "minimum": 10, "maximum": 600, "default": 120},
+                         **version},
+                         "required": ["target"], "additionalProperties": False},
         ),
         Tool(
             name="get_scan_results",
@@ -489,6 +487,25 @@ async def list_tools() -> list[Tool]:
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Handle tool calls."""
     try:
+        scan_names = {"port_scan", "service_scan", "os_detection", "script_scan", "quick_scan"}
+        common_keys = {"target", "timing", "timeout", "max_rate", "max_retries",
+                       "show_reasons", "open_only"}
+        allowed_keys = {
+            "port_scan": common_keys | {"ports"},
+            "service_scan": common_keys | {"ports", "version_intensity"},
+            "os_detection": common_keys | {"ports"},
+            "script_scan": common_keys | {"ports", "scripts"},
+            "quick_scan": common_keys | {"version_intensity"},
+        }
+        if name in scan_names:
+            if not isinstance(arguments, dict) or set(arguments) - allowed_keys[name]:
+                raise ValueError("unsupported scan option")
+            options = {key: arguments[key] for key in common_keys - {"target"} if key in arguments}
+            for key in allowed_keys[name] - common_keys:
+                if key in arguments:
+                    options[key] = arguments[key]
+        else:
+            options = {}
         if name == "port_scan":
             if len(active_scans) >= settings.max_concurrent_scans:
                 return [
@@ -501,9 +518,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             result = await run_nmap_scan(
                 target=arguments["target"],
                 scan_type="port",
-                ports=arguments.get("ports"),
-                timing=arguments.get("timing", 3),
-                timeout=arguments.get("timeout"),
+                **options,
             )
 
             return [
@@ -525,8 +540,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             result = await run_nmap_scan(
                 target=arguments["target"],
                 scan_type="service",
-                ports=arguments.get("ports"),
-                timeout=arguments.get("timeout"),
+                **options,
             )
 
             return [
@@ -548,7 +562,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             result = await run_nmap_scan(
                 target=arguments["target"],
                 scan_type="os",
-                timeout=arguments.get("timeout"),
+                **options,
             )
 
             return [
@@ -567,16 +581,10 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     )
                 ]
 
-            scripts = arguments.get("scripts", [])
-            if not scripts or not set(scripts).issubset(SAFE_NSE_SCRIPTS):
-                return [TextContent(type="text", text="Choose one or more reviewed read-only NSE scripts.")]
-
             result = await run_nmap_scan(
                 target=arguments["target"],
                 scan_type="script",
-                scripts=scripts,
-                ports=arguments.get("ports"),
-                timeout=arguments.get("timeout"),
+                **options,
             )
 
             return [
@@ -598,8 +606,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             result = await run_nmap_scan(
                 target=arguments["target"],
                 scan_type="quick",
-                timing=4,
-                timeout=120,
+                **({"timeout": 120} | options),
             )
 
             return [

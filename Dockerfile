@@ -74,7 +74,7 @@ RUN pip install --no-cache-dir -r /tmp/gateway-requirements.txt -r /tmp/boofuzz-
     cp -r /tmp/dharma/dharma/grammars/. /app/grammars/ && rm -rf /tmp/dharma && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Passwords/Common-Credentials/10k-most-common.txt" -o /app/wordlists/10k-most-common.txt && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/common.txt" -o /app/wordlists/common.txt && \
-    curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/directory-list-2.3-medium.txt" -o /app/wordlists/dirbuster/directory-list-2.3-medium.txt && \
+    curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt" -o /app/wordlists/dirbuster/directory-list-2.3-medium.txt && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/raft-large-directories.txt" -o /app/wordlists/seclists/Discovery/Web-Content/raft-large-directories.txt && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/Web-Content/raft-large-files.txt" -o /app/wordlists/seclists/Discovery/Web-Content/raft-large-files.txt && \
     curl -fsSL "https://raw.githubusercontent.com/danielmiessler/SecLists/${SECLISTS_REV}/Discovery/DNS/subdomains-top1million-5000.txt" -o /app/wordlists/seclists/Discovery/DNS/subdomains-top1million-5000.txt && \

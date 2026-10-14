@@ -88,12 +88,12 @@ async def test_content_and_query_options_are_typed(monkeypatch):
 
 
 def test_raw_report_contains_only_redacted_fields():
-    secret = "topsecret123456"
+    secret = "aaaaabbbbb"
     parsed = gitleaks.parse_gitleaks_json(json.dumps([{"RuleID": "test", "Secret": secret, "Match": "password=" + secret, "File": "x"}]))
     safe = gitleaks.safe_raw_findings(parsed)
     assert secret not in safe
     assert "password=" not in safe
-    assert json.loads(safe)[0]["Secret"] == "tops" + "*" * (len(secret) - 4)
+    assert json.loads(safe)[0]["Secret"] == secret[:4] + "*" * (len(secret) - 4)
 
 
 @pytest.mark.asyncio

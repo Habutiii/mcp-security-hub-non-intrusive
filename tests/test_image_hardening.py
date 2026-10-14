@@ -9,7 +9,8 @@ COMPOSE = (Path(__file__).parent.parent / "docker-compose.yml").read_text(encodi
 
 def test_packaged_code_and_assets_are_not_tool_writable():
     assert "chown -R root:root /opt/security-hub /opt/zap /app" in DOCKERFILE
-    assert "chmod -R a-w /opt/security-hub /opt/zap /app" in DOCKERFILE
+    assert "chmod -R a-w /opt/security-hub /app" in DOCKERFILE
+    assert "chmod -R u+rwX,go-w /opt/zap" in DOCKERFILE
     assert "chown -R mcpuser:mcpuser /var/lib/security-hub" in DOCKERFILE
 
 

@@ -107,7 +107,8 @@ COPY tools/web-security/zap-mcp/ ./tools/zap/
 RUN useradd --create-home --uid 1000 mcpuser && \
     mkdir -p /var/lib/security-hub && \
     chown -R root:root /opt/security-hub /opt/zap /app && \
-    chmod -R a-w /opt/security-hub /opt/zap /app && \
+    chmod -R a-w /opt/security-hub /app && \
+    chmod -R u+rwX,go-w /opt/zap && \
     chown -R mcpuser:mcpuser /var/lib/security-hub
 USER mcpuser
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/opt/security-hub

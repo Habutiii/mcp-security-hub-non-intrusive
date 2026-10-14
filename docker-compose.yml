@@ -13,6 +13,11 @@ services:
     # Nmap raw-socket scans, add only NET_RAW after setting target scope.
     # cap_add: [NET_RAW]
     read_only: true
+    volumes:
+      - type: bind
+        source: ${ZAP_PROFILE_FILE:-./zap_profiles.json}
+        target: /opt/security-hub/zap_profiles.json
+        read_only: true
     tmpfs:
       - /tmp:size=128M
       - /var/lib/security-hub:size=512M,uid=1000,gid=1000,mode=0700

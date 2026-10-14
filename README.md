@@ -33,7 +33,10 @@ requires a reviewed profile mounted read-only at `/opt/security-hub/zap_profiles
 the [default profile file](./zap_profiles.json) is empty. See the
 [ZAP adapter guide](./tools/web-security/zap-mcp/README.md). WhatWeb remains
 available independently.
-For a configured login, add
+For Compose, set `ZAP_PROFILE_FILE` to the absolute path of a JSON file you
+maintain outside this repository. Compose mounts it read-only at the fixed
+container path. If unset, Compose mounts the empty default file. For a direct
+`docker run` or MCP client configuration, add
 `-v /absolute/path/zap_profiles.json:/opt/security-hub/zap_profiles.json:ro`
 to the `docker run` command. The profile contains endpoint and test-account
 metadata; the password is supplied to the bounded `zap_login` call.

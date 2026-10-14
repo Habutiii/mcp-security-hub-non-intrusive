@@ -1,127 +1,34 @@
-# FFUF MCP Server
+# ffuf-mcp
 
-A Model Context Protocol server that provides web fuzzing capabilities using [ffuf](https://github.com/ffuf/ffuf) (Fuzz Faster U Fool).
+Bounded GET discovery with reviewed wordlists.
+
+Gateway component ID: `ffuf`.
 
 ## Tools
 
 | Tool | Description |
-|------|-------------|
-| `ffuf_dir` | Directory and file discovery fuzzing |
-| `ffuf_vhost` | Virtual host / subdomain discovery |
-| `ffuf_param` | GET-only parameter-name discovery |
-| `list_wordlists` | List available wordlists |
-| `get_fuzz_results` | Retrieve results from previous session |
-| `list_active_scans` | Show running fuzzing sessions |
+|---|---|
+| `ffuf_dir` | Directory and file discovery fuzzing. Discovers hidden directories, files, and endpoints on web servers. |
+| `ffuf_vhost` | Virtual host discovery. Discovers subdomains and virtual hosts by fuzzing the Host header. |
+| `ffuf_param` | GET parameter-name discovery only. |
+| `list_wordlists` | List available wordlists for fuzzing. |
+| `get_fuzz_results` | Retrieve results from a previous fuzzing session by scan ID. |
+| `list_active_scans` | List currently running fuzzing sessions. |
 
-## Features
+## Use through the gateway
 
-- **Directory Discovery**: Find hidden files, directories, and endpoints
-- **Virtual Host Discovery**: Enumerate subdomains via Host header fuzzing
-- **Parameter Fuzzing**: Discover hidden GET parameter names
-- **Fixed Wordlists**: Uses the reviewed, container-owned wordlist catalog
-- **Filtering**: Filter by status code, response size, word count
-- **Rate Limiting**: Control request rate to avoid detection
+Build the single image from the repository root with `docker compose build`.
+Connect the MCP client only to `security-hub-agw:latest` using the
+[client examples](../../../examples/). Call `gateway_list_capabilities`,
+`gateway_list_component_tools`, and then `gateway_call` with this
+component ID and one of the listed tool names.
 
-## Pre-installed Wordlists
+The component and each tool can be disabled in
+[`tool_setting.ini`](../../../tool_setting.ini). Settings are read when
+the gateway starts. Direct child connections bypass gateway policy.
 
-| Name | Description |
-|------|-------------|
-| `common` | Common directory/file names |
-| `dirb-common` | DIRB common wordlist |
-| `raft-large-dirs` | Raft large directories |
-| `raft-large-files` | Raft large files |
-| `subdomains-top1mil` | Top 5000 subdomains |
-| `params-top` | Common parameter names |
+Target-facing calls require the deployment-owned `AGW_ALLOWED_TARGETS`
+scope. Local result and status queries do not require a target.
 
-## Docker
-
-### Build
-
-```bash
-docker build -t ffuf-mcp .
-```
-
-### Run
-
-```bash
-docker run --rm -i ffuf-mcp
-```
-
-## Claude Desktop Configuration
-
-Add to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "ffuf": {
-      "command": "docker",
-      "args": ["run", "--rm", "-i", "ffuf-mcp"]
-    }
-  }
-}
-```
-
-## Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `FFUF_OUTPUT_DIR` | `/app/output` | Results directory |
-| `FFUF_WORDLISTS_DIR` | `/app/wordlists` | Wordlists directory |
-| `FFUF_TIMEOUT` | `600` | Default timeout (seconds) |
-| `FFUF_MAX_CONCURRENT` | `2` | Max concurrent scans |
-| `FFUF_THREADS` | `40` | Default thread count |
-| `FFUF_RATE` | `0` | Rate limit (0 = unlimited) |
-
-All requests are GET. The server does not accept custom HTTP methods, bodies,
-caller-controlled headers, or arbitrary wordlist paths. Vhost discovery builds
-its Host header internally from a validated domain.
-
-## Example Usage
-
-### Directory fuzzing
-
-```
-Fuzz https://example.com for hidden directories using common wordlist
-```
-
-### Directory fuzzing with extensions
-
-```
-Fuzz https://example.com/FUZZ for php, html, and txt files
-```
-
-### Virtual host discovery
-
-```
-Discover virtual hosts on 10.10.10.10 for domain example.com
-```
-
-### Parameter discovery
-
-```
-Find hidden parameters on https://example.com/page.php?FUZZ=test
-```
-
-### Custom fuzzing
-
-```
-Fuzz https://example.com/api/FUZZ with custom headers and POST method
-```
-
-## FUZZ Keyword
-
-The `FUZZ` keyword marks where wordlist entries are substituted:
-
-- **URL**: `https://example.com/FUZZ`
-- **Parameter**: `https://example.com/page?FUZZ=value`
-- **Header**: Via `ffuf_vhost` which sets `Host: FUZZ.domain.com`
-- **POST data**: `username=admin&password=FUZZ`
-
-## Security Notice
-
-FFUF is designed for authorized security testing only. Never fuzz systems without explicit permission. High thread counts can cause denial of service.
-
-## License
-
-MIT
+Capability: `bounded_observation`. Expected target effect:
+`audit_logs_only`. See the [capability contract](../../../CAPABILITIES.md).

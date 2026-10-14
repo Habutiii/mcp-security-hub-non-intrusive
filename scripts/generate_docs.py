@@ -56,10 +56,6 @@ def parse_readme_tables(readme_path: Path) -> dict:
                 tools = match.group(3).strip()
                 description = match.group(4).strip()
 
-                # Extract external link if present
-                ext_link_match = re.search(r'\[([^\]]+)\]\(([^)]+)\)', description)
-                external_url = ext_link_match.group(2) if ext_link_match else None
-
                 # Clean description (remove markdown links)
                 clean_desc = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', description)
 
@@ -69,8 +65,6 @@ def parse_readme_tables(readme_path: Path) -> dict:
                     'category': current_category,
                     'tools_count': tools if tools and tools != '-' else None,
                     'description': clean_desc,
-                    'external_url': external_url,
-                    'is_wrapper': 'Wrapper' in description or 'wrapper' in description,
                 })
 
         i += 1

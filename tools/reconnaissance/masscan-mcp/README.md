@@ -1,41 +1,34 @@
-# Masscan MCP Server
+# masscan-mcp
 
-Fast port scanning using [masscan](https://github.com/robertdavidgraham/masscan).
+Low-rate scan of a bounded CIDR using a fixed top-port set.
+
+Gateway component ID: `masscan`.
 
 ## Tools
 
 | Tool | Description |
-|------|-------------|
-| `masscan_scan` | Fast port scan on targets |
-| `masscan_top_ports` | Scan top 20 common ports |
-| `get_scan_results` | Retrieve previous scan |
-| `list_active_scans` | Show running scans |
+|---|---|
+| `masscan_top_ports` | Scan the top 20 most common ports on target(s). |
+| `get_scan_results` | Retrieve results from a previous scan. |
+| `list_active_scans` | List running scans. |
 
-## Features
+## Use through the gateway
 
-- Scan millions of hosts per minute
-- Asynchronous transmission
-- TCP SYN scanning
-- Banner grabbing support
+Build the single image from the repository root with `docker compose build`.
+Connect the MCP client only to `security-hub-agw:latest` using the
+[client examples](../../../examples/). Call `gateway_list_capabilities`,
+`gateway_list_component_tools`, and then `gateway_call` with this
+component ID and one of the listed tool names.
 
-## Docker
+The component and each tool can be disabled in
+[`tool_setting.ini`](../../../tool_setting.ini). Settings are read when
+the gateway starts. Direct child connections bypass gateway policy.
 
-```bash
-docker build -t masscan-mcp .
-# Requires NET_RAW capability
-docker run --rm -i --cap-add=NET_RAW masscan-mcp
-```
+Target-facing calls require the deployment-owned `AGW_ALLOWED_TARGETS`
+scope. Local result and status queries do not require a target.
 
-## Example Usage
+Raw-network operations additionally require `AGW_RAW_NETWORK_ENABLED=true`
+and `NET_RAW` supplied by the deployment.
 
-```
-Scan 10.0.0.0/24 for ports 80, 443, and 22
-```
-
-## Security Notice
-
-Masscan can generate significant network traffic. Use responsibly.
-
-## License
-
-MIT
+Capability: `bounded_observation`. Expected target effect:
+`audit_logs_only`. See the [capability contract](../../../CAPABILITIES.md).

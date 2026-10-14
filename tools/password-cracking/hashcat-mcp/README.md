@@ -1,21 +1,26 @@
-# Dictionary-Only Hashcat MCP Server
+# hashcat-mcp
 
-An MCP server for authorized password recovery using Hashcat's dictionary attack mode only.
+Recover supplied local hashes with the reviewed dictionary.
 
-## Restrictions
+Gateway component ID: `hashcat`.
 
-- Exposes only `hashcat_dictionary_crack`.
-- Always invokes Hashcat with `--attack-mode 0`.
-- Does not accept masks, rules, hybrid modes, restore files, custom commands, or caller-selected wordlists.
-- Uses the SecLists `10k-most-common.txt` dictionary only.
-- Caps each attempt at five minutes.
+## Tools
 
-## Bundled SecLists dictionary
+| Tool | Description |
+|---|---|
+| `hashcat_dictionary_crack` | Attempt authorized password recovery using only the pinned, bundled SecLists dictionary. |
 
-The image build pins and bundles SecLists `10k-most-common.txt` at
-`/app/wordlists/10k-most-common.txt`. The adapter never downloads a wordlist at
-runtime and never accepts an alternate path from an agent.
+## Use through the gateway
 
-## Authorized use
+Build the single image from the repository root with `docker compose build`.
+Connect the MCP client only to `security-hub-agw:latest` using the
+[client examples](../../../examples/). Call `gateway_list_capabilities`,
+`gateway_list_component_tools`, and then `gateway_call` with this
+component ID and one of the listed tool names.
 
-Use only for credentials and systems included in written authorization. The MCP intentionally stops at low-risk dictionary recovery; any broader password-cracking strategy is a human-operated decision outside this server.
+The component and each tool can be disabled in
+[`tool_setting.ini`](../../../tool_setting.ini). Settings are read when
+the gateway starts. Direct child connections bypass gateway policy.
+
+Capability: `local_read`. Expected target effect:
+`none`. See the [capability contract](../../../CAPABILITIES.md).

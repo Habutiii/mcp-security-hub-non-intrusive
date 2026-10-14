@@ -1,32 +1,15 @@
 {
   "mcpServers": {
-    "nmap": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "--cap-add=NET_RAW", "nmap-mcp:latest"]
-    },
-    "ffuf": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "ffuf-mcp:latest"]
-    },
-    "gitleaks": {
+    "security-hub": {
       "command": "docker",
       "args": [
-        "run", "-i", "--rm",
-        "-v", "/path/to/your/repos:/app/target:ro",
-        "gitleaks-mcp:latest"
+        "run", "-i", "--rm", "--read-only",
+        "--tmpfs", "/tmp:rw,size=128m",
+        "--tmpfs", "/var/lib/security-hub:rw,size=512m",
+        "--cap-drop=ALL", "--security-opt=no-new-privileges",
+        "-e", "AGW_ALLOWED_TARGETS=example.com",
+        "security-hub-agw:latest"
       ]
-    },
-    "masscan": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "--cap-add=NET_RAW", "masscan-mcp:latest"]
-    },
-    "whatweb": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "whatweb-mcp:latest"]
-    },
-    "waybackurls": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "waybackurls-mcp:latest"]
     }
   }
 }

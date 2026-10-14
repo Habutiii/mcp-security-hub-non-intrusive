@@ -1,80 +1,30 @@
-# Gitleaks MCP Server
+# gitleaks-mcp
 
-Custom MCP server wrapping [Gitleaks](https://github.com/gitleaks/gitleaks) for detecting secrets and credentials in git repositories and files.
+Read-only secret scanning of approved local input.
+
+Gateway component ID: `gitleaks`.
 
 ## Tools
 
 | Tool | Description |
-|------|-------------|
-| `gitleaks_scan_repo` | Scan a git repository including commit history |
-| `gitleaks_scan_dir` | Scan a directory without git history |
-| `gitleaks_detect` | Quick scan text content for secrets |
-| `get_scan_results` | Retrieve previous scan results |
-| `list_active_scans` | Show running scans |
+|---|---|
+| `gitleaks_scan_repo` | Scan a git repository for secrets and credentials. Analyzes commit history for leaked API keys, passwords, tokens, etc. |
+| `gitleaks_scan_dir` | Scan a directory for secrets without git history analysis. Useful for scanning non-git directories or specific folders. |
+| `gitleaks_detect` | Quick scan provided content (text/code) for secrets. Useful for checking config files, environment variables, etc. |
+| `get_scan_results` | Retrieve results from a previous scan by scan ID. |
+| `list_active_scans` | List currently running scans. |
 
-## Usage
+## Use through the gateway
 
-### Docker
+Build the single image from the repository root with `docker compose build`.
+Connect the MCP client only to `security-hub-agw:latest` using the
+[client examples](../../../examples/). Call `gateway_list_capabilities`,
+`gateway_list_component_tools`, and then `gateway_call` with this
+component ID and one of the listed tool names.
 
-```bash
-docker build -t gitleaks-mcp .
-docker run -it --rm gitleaks-mcp
-```
+The component and each tool can be disabled in
+[`tool_setting.ini`](../../../tool_setting.ini). Settings are read when
+the gateway starts. Direct child connections bypass gateway policy.
 
-### Claude Desktop
-
-```json
-{
-  "mcpServers": {
-    "gitleaks": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "gitleaks-mcp:latest"]
-    }
-  }
-}
-```
-
-### Scan Local Repository
-
-```json
-{
-  "mcpServers": {
-    "gitleaks": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "/path/to/repos:/repos:ro",
-        "gitleaks-mcp:latest"
-      ]
-    }
-  }
-}
-```
-
-## What Gitleaks Detects
-
-- API keys (AWS, GCP, Azure, Stripe, etc.)
-- Passwords and tokens
-- Private keys (SSH, PGP)
-- Database connection strings
-- OAuth secrets
-- JWT tokens
-- And 150+ other secret patterns
-
-## Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GITLEAKS_OUTPUT_DIR` | `/app/output` | Scan output directory |
-| `GITLEAKS_TIMEOUT` | `300` | Default scan timeout (seconds) |
-| `GITLEAKS_MAX_CONCURRENT` | `2` | Maximum concurrent scans |
-
-## Security Notes
-
-- Secrets in output are automatically masked (first 4 chars visible)
-- Always obtain **written authorization** before scanning repositories
-- Be careful with scan outputs - they may contain partial secrets
-
-## License
-
-MIT
+Capability: `local_read`. Expected target effect:
+`none`. See the [capability contract](../../../CAPABILITIES.md).

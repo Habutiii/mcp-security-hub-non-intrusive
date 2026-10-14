@@ -39,7 +39,7 @@ Every MCP server in this repository must enforce its own boundary; prompting alo
 - Expose fixed, purpose-specific operations. Do not expose arbitrary code execution, arbitrary local scripts, generic command runners, or raw terminal access.
 - Allowlist scanner scripts, plugins, and templates. Only reviewed non-mutating checks may be agent-callable.
 - Do not expose arbitrary HTTP methods, request bodies, headers, credentials, or callbacks when they could make a state-changing request or exfiltrate data.
-- Pin and review upstream dependencies before exposing their tools. An upstream wrapper that can run commands or invoke state-changing capabilities is not suitable without local restriction.
+- Pin and review external scanner binaries. Keep the MCP interface and argument validation in this repository.
 - Run containers as non-root with the minimum capabilities and read-only mounts whenever possible.
 
 ## Human approval boundary

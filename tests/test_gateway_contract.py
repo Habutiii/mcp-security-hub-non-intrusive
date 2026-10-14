@@ -47,3 +47,9 @@ def test_gateway_fails_closed_on_capability_drift():
     assert "Capability contract drift" in GATEWAY_SOURCE
     assert "set(tools) != expected_tools" in GATEWAY_SOURCE
     assert "Tool is not permitted by the reviewed capability contract" in GATEWAY_SOURCE
+
+
+def test_gateway_applies_tool_switches_at_discovery_and_dispatch():
+    assert "SETTINGS = load_tool_settings()" in GATEWAY_SOURCE
+    assert "if tool.name in SETTINGS.tools_for(component_id)" in GATEWAY_SOURCE
+    assert "if tool_name not in SETTINGS.tools_for(component_id)" in GATEWAY_SOURCE

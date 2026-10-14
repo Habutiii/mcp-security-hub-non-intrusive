@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Restricted, non-mutating wrapper for vetted ProjectDiscovery discovery tools."""
+"""Local MCP adapter for vetted ProjectDiscovery discovery binaries."""
 
 import asyncio
 import ipaddress

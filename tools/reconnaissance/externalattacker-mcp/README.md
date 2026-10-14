@@ -1,58 +1,33 @@
-# ExternalAttacker MCP Server
+# externalattacker-mcp
 
-An AGW-owned Python adapter for non-mutating external attack-surface discovery.
+Fixed, low-rate attack-surface discovery.
 
-## Features
-
-- Subdomain discovery with subfinder
-- Port scanning with naabu
-- HTTP analysis with httpx
-- CDN detection with cdncheck
-- TLS analysis with tlsx
+Gateway component ID: `externalattacker`.
 
 ## Tools
 
 | Tool | Description |
-|------|-------------|
-| discover_subdomains | Find subdomains for a target domain |
-| scan_ports | Scan for open ports on targets |
-| analyze_http | Analyze HTTP responses and headers |
-| check_cdn | Detect CDN providers |
-| analyze_tls | Analyze TLS certificates |
+|---|---|
+| `discover_subdomains` | Passive subdomain discovery for one authorized domain. |
+| `scan_ports` | Low-rate TCP port discovery on one host. Port list is fixed to 80 and 443. |
+| `analyze_http` | Bounded HTTP(S) technology and response metadata probe. Custom requests are unavailable. |
+| `check_cdn` | Identify the CDN serving one domain. |
+| `analyze_tls` | Read TLS certificate and protocol metadata from one host and optional port. |
 
-## Usage
+## Use through the gateway
 
-### Docker
+Build the single image from the repository root with `docker compose build`.
+Connect the MCP client only to `security-hub-agw:latest` using the
+[client examples](../../../examples/). Call `gateway_list_capabilities`,
+`gateway_list_component_tools`, and then `gateway_call` with this
+component ID and one of the listed tool names.
 
-```bash
-docker build -t externalattacker-mcp .
-docker run -i --rm externalattacker-mcp
-```
+The component and each tool can be disabled in
+[`tool_setting.ini`](../../../tool_setting.ini). Settings are read when
+the gateway starts. Direct child connections bypass gateway policy.
 
-### Claude Desktop
+Target-facing calls require the deployment-owned `AGW_ALLOWED_TARGETS`
+scope. Local result and status queries do not require a target.
 
-```json
-{
-  "mcpServers": {
-    "externalattacker": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "externalattacker-mcp:latest"]
-    }
-  }
-}
-```
-
-## Restrictions
-
-The upstream generic command runner and updater are not part of the runtime. Endpoint fuzzing, Gobuster modes, Nuclei, file inputs, custom wordlists, methods, resolvers, thread counts, and output paths are not exposed. Ports are fixed to 80 and 443, while HTTP and port scanning use fixed low rates.
-
-The restricted runtime is [`server.py`](./server.py). Its schema and command
-arguments are owned by this repository; upstream MCP server code is not used.
-
-## Security Notice
-
-Use only for authorized, non-destructive reconnaissance. Active discovery traffic and scan logs are expected, but no target state-changing capability is exposed.
-
-## License
-
-MIT
+Capability: `bounded_observation`. Expected target effect:
+`audit_logs_only`. See the [capability contract](../../../CAPABILITIES.md).

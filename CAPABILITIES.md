@@ -27,10 +27,11 @@ is deliberately a label for the orchestrator to enforce before dispatch. Connect
 the gateway only behind an orchestrator that rejects out-of-scope targets and
 persists its scope decision with the tool call.
 
-## Deliberately not gateway-callable
+## Local registry and deployment switches
 
-The repository may contain additional upstream wrappers, but they are not in
-the capability registry if their entire advertised surface has not been
-locally reviewed. This includes Nikto and all opaque external wrappers. They
-remain human-only until a positive capability contract, schema-drift test, and
-safe execution limits are added.
+Every MCP implementation in `tools/` has a fixed component entry and a reviewed
+tool allowlist in `gateway-mcp/capability_policy.py`. No upstream MCP wrapper is
+packaged. `tool_setting.ini` contains one switch per component and per tool.
+Disabling an entry removes it from gateway discovery and rejects its calls.
+The file cannot grant a tool absent from the registry or relax scope and
+privilege checks. Changes take effect when the gateway starts.

@@ -23,7 +23,8 @@ from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
 from capability_policy import CAPABILITIES, CAPABILITY_BY_COMPONENT, Capability, PrivilegeProfile
-from scope_policy import ScopeError, validate_scope
+from scope_policy import ScopeError, TARGETLESS_TOOLS, validate_scope
+from tool_settings import load_tool_settings
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger("security-hub-gateway")
@@ -58,6 +59,13 @@ COMPONENTS: dict[str, Component] = {
     "sqlmap": Component(CAPABILITY_BY_COMPONENT["sqlmap"], "/opt/security-hub/tools/sqlmap", (("SQLMAP_OUTPUT_DIR", "/var/lib/security-hub/sqlmap"),)),
     "nikto": Component(CAPABILITY_BY_COMPONENT["nikto"], "/opt/security-hub/tools/nikto", memory_bytes=1_610_612_736),
 }
+SETTINGS = load_tool_settings()
+ENABLED_COMPONENTS = {
+    component_id: component for component_id, component in COMPONENTS.items()
+    if component_id in SETTINGS.enabled_components and SETTINGS.tools_for(component_id)
+}
+if set(COMPONENTS) != set(CAPABILITY_BY_COMPONENT):
+    raise RuntimeError("Every local component must have exactly one capability entry")
 
 
 @dataclass
@@ -94,8 +102,8 @@ CHILD_BASE_ENVIRONMENT = {
 
 async def start_component(component_id: str) -> RunningComponent:
     """Start and initialize one registry-owned child MCP exactly once."""
-    if component_id not in COMPONENTS:
-        raise ValueError("Unknown registered MCP identifier")
+    if component_id not in ENABLED_COMPONENTS:
+        raise ValueError("Unknown or disabled MCP identifier")
 
     async with start_lock:
         existing = running.get(component_id)
@@ -109,7 +117,7 @@ async def start_component(component_id: str) -> RunningComponent:
                 raise RuntimeError("maximum warm MCP process count reached")
             await stop_component(min(idle, key=lambda instance: instance.last_used).component_id)
 
-        component = COMPONENTS[component_id]
+        component = ENABLED_COMPONENTS[component_id]
         if component.capability.privilege_profile == PrivilegeProfile.RAW_NETWORK and not RAW_NETWORK_ENABLED:
             raise RuntimeError("raw-network tools are disabled; enable AGW_RAW_NETWORK_ENABLED only in an authorized deployment")
         environment = CHILD_BASE_ENVIRONMENT.copy()
@@ -186,7 +194,7 @@ def text(data: Any) -> list[TextContent]:
 
 @app.list_tools()
 async def list_tools() -> list[Tool]:
-    component_ids = sorted(COMPONENTS)
+    component_ids = sorted(ENABLED_COMPONENTS)
     return [
         Tool(
             name="gateway_list_capabilities",
@@ -229,7 +237,13 @@ async def list_tools() -> list[Tool]:
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     try:
         if name == "gateway_list_capabilities":
-            return text({capability.component_id: capability.public() for capability in CAPABILITIES})
+            return text({
+                component_id: {
+                    **component.capability.public(),
+                    "allowed_tools": sorted(SETTINGS.tools_for(component_id)),
+                }
+                for component_id, component in ENABLED_COMPONENTS.items()
+            })
 
         if name == "gateway_list_components":
             return text({
@@ -243,12 +257,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                     "active_calls": running[component_id].active_calls if component_id in running else 0,
                     "idle_timeout_seconds": IDLE_TIMEOUT_SECONDS,
                 }
-                for component_id, component in COMPONENTS.items()
+                for component_id, component in ENABLED_COMPONENTS.items()
             })
 
         component_id = arguments.get("mcp_id")
-        if component_id not in COMPONENTS:
-            return text({"error": "Unknown registered MCP identifier"})
+        if component_id not in ENABLED_COMPONENTS:
+            return text({"error": "Unknown or disabled MCP identifier"})
 
         if name == "gateway_prewarm":
             instance = await start_component(component_id)
@@ -261,16 +275,21 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             instance = await start_component(component_id)
             return text({
                 "mcp_id": component_id,
-                "tools": [tool.model_dump(mode="json") for tool in instance.tools.values()],
+                "tools": [
+                    tool.model_dump(mode="json") for tool in instance.tools.values()
+                    if tool.name in SETTINGS.tools_for(component_id)
+                ],
             })
 
         if name == "gateway_call":
             capability = CAPABILITY_BY_COMPONENT[component_id]
-            if capability.scope_required:
-                decision = validate_scope(component_id, arguments.get("arguments", {}))
-                logger.info("audit=%s", json.dumps({"event": "scope_allowed", "component": component_id, "tool": arguments.get("tool_name"), **decision}, sort_keys=True))
-            instance = await start_component(component_id)
             tool_name = arguments.get("tool_name")
+            if tool_name not in SETTINGS.tools_for(component_id):
+                return text({"error": "Tool is not permitted by the reviewed capability contract or tool settings"})
+            if capability.scope_required and tool_name not in TARGETLESS_TOOLS.get(component_id, frozenset()):
+                decision = validate_scope(component_id, arguments.get("arguments", {}))
+                logger.info("audit=%s", json.dumps({"event": "scope_allowed", "component": component_id, "tool": tool_name, **decision}, sort_keys=True))
+            instance = await start_component(component_id)
             if tool_name not in capability.allowed_tools or tool_name not in instance.tools:
                 return text({"error": "Tool is not permitted by the reviewed capability contract"})
             async with instance.lock:

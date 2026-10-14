@@ -1,96 +1,33 @@
-# PD-Tools MCP Server
+# pd-tools-mcp
 
-An AGW-owned Python adapter that exposes only bounded, non-mutating ProjectDiscovery discovery operations.
+Bounded ProjectDiscovery reconnaissance operations.
 
-## Included Tools
+Gateway component ID: `pd_tools`.
+
+## Tools
 
 | Tool | Description |
-|------|-------------|
-| **subfinder** | Fast passive subdomain enumeration |
-| **httpx** | HTTP probing and fingerprinting |
-| **katana** | Next-generation web crawler |
-| **dnsx** | Fast DNS toolkit |
-| **naabu** | Fast port scanner |
+|---|---|
+| `pd_subfinder` | Passive subdomain discovery. No active source mode is enabled. |
+| `pd_dns_resolve` | Resolve DNS records for at most 20 supplied hostnames. |
+| `pd_port_scan` | Low-rate TCP discovery on explicitly supplied hosts and up to 20 ports. |
+| `pd_http_probe` | Bounded HTTP(S) fingerprinting. Redirects, screenshots, custom methods, bodies, and headers are unavailable. |
+| `pd_crawl` | Same-registrable-domain HTTP(S) crawl at fixed depth and rate. Only GET-style discovery is exposed. |
 
-## Features
+## Use through the gateway
 
-The MCP intentionally excludes Nuclei, unrestricted templates, screenshots, redirects, and the automated bug-bounty workflow. Its tools use fixed options: 20 targets maximum, one concurrent run, 120-second timeout, low HTTP/port-scan rates, a crawl depth of two, and no caller-supplied executable arguments.
+Build the single image from the repository root with `docker compose build`.
+Connect the MCP client only to `security-hub-agw:latest` using the
+[client examples](../../../examples/). Call `gateway_list_capabilities`,
+`gateway_list_component_tools`, and then `gateway_call` with this
+component ID and one of the listed tool names.
 
-The restricted runtime is [`server.py`](./server.py). Its tool schema and
-arguments are owned by this repository; upstream projects are not included as
-MCP server implementations.
+The component and each tool can be disabled in
+[`tool_setting.ini`](../../../tool_setting.ini). Settings are read when
+the gateway starts. Direct child connections bypass gateway policy.
 
-## Docker
+Target-facing calls require the deployment-owned `AGW_ALLOWED_TARGETS`
+scope. Local result and status queries do not require a target.
 
-### Build
-
-```bash
-docker build -t pd-tools-mcp .
-```
-
-### Run
-
-```bash
-docker run --rm -i pd-tools-mcp
-```
-
-## Claude Desktop Configuration
-
-Add to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "pd-tools": {
-      "command": "docker",
-      "args": ["run", "--rm", "-i", "pd-tools-mcp"]
-    }
-  }
-}
-```
-
-## Example Usage
-
-### Subdomain enumeration
-
-```
-Find all subdomains of example.com using subfinder
-```
-
-### HTTP probing
-
-```
-Probe these hosts with httpx to find live web servers
-```
-
-### Web crawling
-
-```
-Crawl https://example.com with katana to discover endpoints
-```
-
-### DNS reconnaissance
-
-```
-Resolve DNS records for these domains using dnsx
-```
-
-### Port scanning
-
-```
-Scan ports on 192.168.1.1 using naabu
-```
-
-## Upstream
-
-This is a Docker wrapper for:
-- Repository: [intelligent-ears/pd-tools-mcp](https://github.com/intelligent-ears/pd-tools-mcp)
-- Tools: [ProjectDiscovery](https://projectdiscovery.io/)
-
-## Security Notice
-
-These tools are designed for authorized, non-destructive security testing only. They generate active discovery traffic and target-side logs, but do not expose database changes, target-side command execution, arbitrary request controls, or arbitrary scanner options.
-
-## License
-
-MIT
+Capability: `bounded_observation`. Expected target effect:
+`audit_logs_only`. See the [capability contract](../../../CAPABILITIES.md).

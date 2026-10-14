@@ -35,9 +35,9 @@ single image.
 
 ## Migration
 
-Existing local Python MCPs are migrated incrementally to this adapter contract.
-Community MCP projects are reference-only: their semantics may inform a new
-adapter, but their server process is not included in the AGW image.
+All 13 local Python MCPs are packaged behind this adapter contract. External
+scanner binaries may be installed in the image, but upstream MCP server
+processes are not packaged or run.
 
 The AGW image tracks the current supported Python 3.14 release line. Adapters
 must remain compatible with current CPython rather than retaining an older

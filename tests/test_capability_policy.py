@@ -25,3 +25,8 @@ def test_component_ids_and_tool_names_are_unique():
     assert len(component_ids) == len(set(component_ids))
     for capability in policy.CAPABILITIES:
         assert len(capability.allowed_tools) == len(set(capability.allowed_tools))
+
+
+def test_every_local_mcp_has_a_capability_entry():
+    root = Path(__file__).parent.parent
+    assert len(policy.CAPABILITIES) == len(list(root.glob("tools/*/*/server.py")))

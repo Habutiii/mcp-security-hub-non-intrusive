@@ -1,5 +1,4 @@
-# Single-image, local-process security hub. Only gateway-reviewed MCPs are
-# included; upstream wrappers that are not in capability_policy.py stay out.
+# Single-image, local-process security hub. All included MCPs are local adapters.
 FROM golang:1.26-trixie AS go-builder
 
 ENV CGO_ENABLED=0 GOPATH=/go PATH=/go/bin:$PATH
@@ -76,6 +75,7 @@ RUN pip install --no-cache-dir -r /tmp/gateway-requirements.txt -r /tmp/boofuzz-
     apt-get purge -y --auto-remove curl git
 
 COPY gateway-mcp/ ./gateway-mcp/
+COPY tool_setting.ini ./tool_setting.ini
 COPY adapters/ ./adapters/
 COPY tools/fuzzing/dharma-mcp/ ./tools/dharma/
 COPY tools/fuzzing/boofuzz-mcp/ ./tools/boofuzz/

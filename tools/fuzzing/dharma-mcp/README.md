@@ -1,93 +1,27 @@
-# Dharma MCP Server
+# dharma-mcp
 
-Model Context Protocol (MCP) server for **Dharma grammar-based fuzzing**. This server exposes Dharma’s grammar-based test case generation capabilities via MCP, enabling integration with tools like Claude Desktop.
+Generate test cases locally; never sends them.
 
-Transport: **stdio** (no HTTP server).
-
----
+Gateway component ID: `dharma`.
 
 ## Tools
 
-| Tool                     | Description                                                                                     |
-|--------------------------|-------------------------------------------------------------------------------------------------|
-| `dharma_generate`        | Generate test cases using a Dharma grammar file located on the server.                          |
+| Tool | Description |
+|---|---|
+| `dharma_generate` | Generate test cases using a Dharma grammar file located on the server. |
 | `dharma_generate_custom` | Generate test cases from a custom Dharma grammar provided as a string. Useful for dynamically generated grammars or quick testing without saving files. |
 
----
+## Use through the gateway
 
-## Docker
+Build the single image from the repository root with `docker compose build`.
+Connect the MCP client only to `security-hub-agw:latest` using the
+[client examples](../../../examples/). Call `gateway_list_capabilities`,
+`gateway_list_component_tools`, and then `gateway_call` with this
+component ID and one of the listed tool names.
 
-### Build
+The component and each tool can be disabled in
+[`tool_setting.ini`](../../../tool_setting.ini). Settings are read when
+the gateway starts. Direct child connections bypass gateway policy.
 
-```bash
-docker build -t dharma-mcp .
-```
-
-### Run
-
-```bash
-docker run --rm -i dharma-mcp
-```
-
-### With Volumes
-
-Mount your grammar files under `/app/grammars` and collect generated outputs under `/app/output`:
-
-```bash
-docker run --rm -i \
-  -v /path/to/grammars:/app/grammars\:ro \
-  -v /path/to/output:/app/output \
-  dharma-mcp
-```
-
----
-
-## Claude Desktop Configuration
-
-To integrate with Claude Desktop, add the following to your configuration:
-
-```json
-{
-  "mcpServers": {
-    "dharma": {
-      "command": "docker",
-      "args": [
-        "run", "--rm", "-i",
-        "-v", "/path/to/grammars:/app/grammars\:ro",
-        "-v", "/path/to/output:/app/output",
-        "dharma-mcp\:latest"
-      ]
-    }
-  }
-}
-```
-
----
-
-## Environment Variables
-
-| Variable               | Default          | Description                                      |
-|------------------------|------------------|--------------------------------------------------|
-| `DHARMA_GRAMMAR_DIR`   | `/app/grammars`  | Directory containing Dharma grammar files.       |
-
----
-
-## Example Usage
-
-### Generate Test Cases from a File
-
-```plaintext
-Generate 10 test cases using the grammar at /app/grammars/json.dg
-```
-
-### Generate Test Cases from a Custom Grammar
-
-```plaintext
-Run dharma_generate_custom with grammar_content="<grammar content here>" and count=5
-```
-
-### With Explicit Output
-
-```plaintext
-Run dharma_generate with grammar_path=/app/grammars/json.dg and count=5
-```
+Capability: `local_read`. Expected target effect:
+`none`. See the [capability contract](../../../CAPABILITIES.md).

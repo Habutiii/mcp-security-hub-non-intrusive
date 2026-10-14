@@ -108,6 +108,17 @@ TARGET_FIELDS: dict[str, tuple[str, ...]] = {
     "nikto": ("target",),
 }
 
+# These reviewed tools only read local process state and have no target input.
+# Keep this list explicit: a new target-facing tool must pass validate_scope.
+TARGETLESS_TOOLS: dict[str, frozenset[str]] = {
+    "waybackurls": frozenset({"get_fetch_results", "list_active_fetches"}),
+    "nmap": frozenset({"get_scan_results", "list_active_scans"}),
+    "whatweb": frozenset({"get_scan_results", "list_active_scans"}),
+    "ffuf": frozenset({"list_wordlists", "get_fuzz_results", "list_active_scans"}),
+    "masscan": frozenset({"get_scan_results", "list_active_scans"}),
+    "nikto": frozenset({"nikto_get_result"}),
+}
+
 
 def validate_scope(component_id: str, arguments: dict[str, object]) -> dict[str, object]:
     """Reject every target-bearing value that is not inside deployment scope."""

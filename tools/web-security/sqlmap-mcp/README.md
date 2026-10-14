@@ -1,51 +1,27 @@
-# SQLMap MCP Server (Execution Disabled)
+# sqlmap-mcp
 
-SQLMap execution is deliberately disabled by this repository's non-intrusive policy.
+Read existing SQLMap result state only; execution and extraction are disabled.
+
+Gateway component ID: `sqlmap`.
 
 ## Tools
 
 | Tool | Description |
-|------|-------------|
-| `get_scan_results` | Retrieve previous results |
-| `list_active_scans` | Show running scans |
+|---|---|
+| `get_scan_results` | Retrieve results from a previous scan by scan ID. |
+| `list_active_scans` | List currently running scans. |
 
-## Usage
+## Use through the gateway
 
-### Docker
+Build the single image from the repository root with `docker compose build`.
+Connect the MCP client only to `security-hub-agw:latest` using the
+[client examples](../../../examples/). Call `gateway_list_capabilities`,
+`gateway_list_component_tools`, and then `gateway_call` with this
+component ID and one of the listed tool names.
 
-```bash
-docker build -t sqlmap-mcp .
-docker run -it --rm sqlmap-mcp
-```
+The component and each tool can be disabled in
+[`tool_setting.ini`](../../../tool_setting.ini). Settings are read when
+the gateway starts. Direct child connections bypass gateway policy.
 
-### Claude Desktop
-
-```json
-{
-  "mcpServers": {
-    "sqlmap": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "sqlmap-mcp:latest"]
-    }
-  }
-}
-```
-
-## Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SQLMAP_OUTPUT_DIR` | `/app/output` | Directory for scan output |
-| `SQLMAP_TIMEOUT` | `300` | Default scan timeout (seconds) |
-| `SQLMAP_MAX_CONCURRENT` | `2` | Max concurrent scans |
-| `SQLMAP_LEVEL` | `1` | Default test level (1-5) |
-| `SQLMAP_RISK` | `1` | Default risk level (1-3) |
-
-## Security Notice
-
-Injection testing, database enumeration, and data extraction are not callable.
-This MCP only exposes stored-result and status operations.
-
-## License
-
-MIT
+Capability: `local_read`. Expected target effect:
+`none`. See the [capability contract](../../../CAPABILITIES.md).

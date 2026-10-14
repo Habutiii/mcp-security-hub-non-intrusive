@@ -27,30 +27,49 @@ MCP_SERVERS = [
     ("tools/web-security", "sqlmap-mcp"),
     ("tools/web-security", "ffuf-mcp"),
     ("tools/web-security", "waybackurls-mcp"),
+    ("tools/web-security", "nikto-observer-mcp"),
     ("tools/fuzzing", "boofuzz-mcp"),
     ("tools/fuzzing", "dharma-mcp"),
     ("tools/secrets", "gitleaks-mcp"),
     ("tools/password-cracking", "hashcat-mcp"),
 ]
+COMPONENT_FOR_MCP = {
+    "nmap-mcp": "nmap",
+    "whatweb-mcp": "whatweb",
+    "masscan-mcp": "masscan",
+    "pd-tools-mcp": "pd_tools",
+    "externalattacker-mcp": "externalattacker",
+    "sqlmap-mcp": "sqlmap",
+    "ffuf-mcp": "ffuf",
+    "waybackurls-mcp": "waybackurls",
+    "nikto-observer-mcp": "nikto",
+    "boofuzz-mcp": "boofuzz",
+    "dharma-mcp": "dharma",
+    "gitleaks-mcp": "gitleaks",
+    "hashcat-mcp": "hashcat",
+}
 
-# MCP servers that wrap external implementations (Dockerfile only, no server.py)
-MCP_WRAPPERS = [
-    ("tools/reconnaissance", "shodan-mcp"),
-    ("tools/reconnaissance", "zoomeye-mcp"),
-    ("tools/reconnaissance", "networksdb-mcp"),
-    ("tools/web-security", "nikto-mcp"),
-    ("tools/web-security", "burp-mcp"),
-    ("tools/osint", "maigret-mcp"),
-    ("tools/osint", "dnstwist-mcp"),
-    ("tools/threat-intel", "virustotal-mcp"),
-    ("tools/threat-intel", "otx-mcp"),
-    ("tools/active-directory", "bloodhound-mcp"),
-    ("tools/meta", "mcp-scan"),
-]
-
-# All MCPs (for file existence tests)
-ALL_MCPS = MCP_SERVERS + MCP_WRAPPERS
 PYTHON_SERVER_FILES = sorted(ROOT_DIR.rglob("server.py"))
+
+
+def test_every_local_mcp_server_is_in_the_test_catalog():
+    discovered = set(ROOT_DIR.glob("tools/*/*/server.py"))
+    expected = {ROOT_DIR / category / name / "server.py" for category, name in MCP_SERVERS}
+    assert discovered == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("category,mcp_name", MCP_SERVERS, ids=[name for _, name in MCP_SERVERS])
+async def test_gateway_registry_covers_every_advertised_local_tool(category, mcp_name):
+    gateway_dir = ROOT_DIR / "gateway-mcp"
+    if str(gateway_dir) not in sys.path:
+        sys.path.insert(0, str(gateway_dir))
+    from capability_policy import CAPABILITY_BY_COMPONENT
+
+    module = load_server_module(category, mcp_name)
+    advertised = {tool.name for tool in await module.list_tools()}
+    registered = CAPABILITY_BY_COMPONENT[COMPONENT_FOR_MCP[mcp_name]].allowed_tools
+    assert advertised == registered
 
 
 def load_server_module(category: str, mcp_name: str):
@@ -151,8 +170,8 @@ class TestMCPServer:
 
 
 def get_all_mcp_ids():
-    """Generate test IDs for all MCPs."""
-    return [f"{cat}/{name}" for cat, name in ALL_MCPS]
+    """Generate test IDs for local MCPs."""
+    return get_mcp_ids()
 
 
 class TestMCPServerPaths:
@@ -170,7 +189,7 @@ class TestMCPServerPaths:
         req_path = ROOT_DIR / category / mcp_name / "requirements.txt"
         assert req_path.exists(), f"Missing: {req_path}"
 
-    @pytest.mark.parametrize("category,mcp_name", ALL_MCPS, ids=get_all_mcp_ids())
+    @pytest.mark.parametrize("category,mcp_name", MCP_SERVERS, ids=get_all_mcp_ids())
     def test_readme_exists(self, category: str, mcp_name: str):
         """Test that README.md exists for each MCP."""
         readme_path = ROOT_DIR / category / mcp_name / "README.md"

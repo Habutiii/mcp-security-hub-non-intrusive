@@ -58,10 +58,8 @@ class Capability:
         return data
 
 
-# Do not add a component here merely because it is present in the repository.
-# A component is gateway-callable only after every advertised tool has been
-# reviewed and named here.  Opaque upstream wrappers remain outside the agent
-# boundary until they are locally constrained to a positive tool set.
+# Every local MCP component has one entry here. Each advertised tool is reviewed
+# before inclusion; tool_setting.ini can only disable these fixed bindings.
 CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "dharma", "dharma-mcp:latest", CapabilityType.LOCAL_READ,

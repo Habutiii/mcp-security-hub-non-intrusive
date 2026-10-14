@@ -1,15 +1,14 @@
 {
-  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schemas/mcp-project.schema.json",
-  "_comment": "Copy this file to your project root as .mcp.json",
-
   "mcpServers": {
-    "gitleaks": {
-      "_description": "Scan current project for secrets",
+    "security-hub": {
       "command": "docker",
       "args": [
-        "run", "-i", "--rm",
-        "-v", ".:/app/target:ro",
-        "gitleaks-mcp:latest"
+        "run", "-i", "--rm", "--read-only",
+        "--tmpfs", "/tmp:rw,size=128m",
+        "--tmpfs", "/var/lib/security-hub:rw,size=512m",
+        "--cap-drop=ALL", "--security-opt=no-new-privileges",
+        "-e", "AGW_ALLOWED_TARGETS=example.com",
+        "security-hub-agw:latest"
       ]
     }
   }

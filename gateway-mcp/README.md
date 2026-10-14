@@ -26,6 +26,12 @@ unspecified answers are rejected unless the deployment also explicitly allows
 the matching IP network. This prevents DNS rebinding from turning a domain
 allowlist entry into access to local services.
 
+`tool_setting.ini` lists every local component and reviewed tool. Set an entry
+to `false` and restart the gateway to remove it from discovery and dispatch.
+The file is packaged at `/opt/security-hub/tool_setting.ini`; a deployment may
+mount a reviewed replacement at that path read-only. Missing, unknown, or
+malformed entries stop the gateway at startup.
+
 ```powershell
 docker run -i --rm -e AGW_ALLOWED_TARGETS=example.com,10.10.0.0/16 security-hub-agw:latest
 ```
@@ -78,7 +84,8 @@ deterministic AGW dispatcher.
     "security-hub": {
       "command": "docker",
       "args": [
-        "run", "-i", "--rm", "security-hub-agw:latest"
+        "run", "-i", "--rm", "-e", "AGW_ALLOWED_TARGETS=example.com",
+        "security-hub-agw:latest"
       ]
     }
   }

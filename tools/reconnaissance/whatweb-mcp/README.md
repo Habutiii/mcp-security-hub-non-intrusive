@@ -1,36 +1,31 @@
-# WhatWeb MCP Server
+# whatweb-mcp
 
-Web technology fingerprinting using [WhatWeb](https://github.com/urbanadventurer/WhatWeb).
+HTTP technology fingerprinting only.
+
+Gateway component ID: `whatweb`.
 
 ## Tools
 
 | Tool | Description |
-|------|-------------|
-| `whatweb_scan` | Identify web technologies on target |
-| `get_scan_results` | Retrieve previous scan results |
-| `list_active_scans` | Show running scans |
+|---|---|
+| `whatweb_scan` | Identify web technologies, CMS, frameworks, and server software. Detects WordPress, Drupal, Apache, nginx, jQuery, and hundreds more. |
+| `get_scan_results` | Retrieve results from a previous scan by scan ID. |
+| `list_active_scans` | List currently running scans. |
 
-## Features
+## Use through the gateway
 
-- Identifies CMS (WordPress, Drupal, Joomla, etc.)
-- Detects web frameworks (Django, Rails, Laravel, etc.)
-- Server software (Apache, nginx, IIS)
-- JavaScript libraries (jQuery, React, Angular)
-- 1800+ plugins for technology detection
+Build the single image from the repository root with `docker compose build`.
+Connect the MCP client only to `security-hub-agw:latest` using the
+[client examples](../../../examples/). Call `gateway_list_capabilities`,
+`gateway_list_component_tools`, and then `gateway_call` with this
+component ID and one of the listed tool names.
 
-## Docker
+The component and each tool can be disabled in
+[`tool_setting.ini`](../../../tool_setting.ini). Settings are read when
+the gateway starts. Direct child connections bypass gateway policy.
 
-```bash
-docker build -t whatweb-mcp .
-docker run --rm -i whatweb-mcp
-```
+Target-facing calls require the deployment-owned `AGW_ALLOWED_TARGETS`
+scope. Local result and status queries do not require a target.
 
-## Example Usage
-
-```
-Identify what technologies example.com is using
-```
-
-## License
-
-MIT
+Capability: `bounded_observation`. Expected target effect:
+`audit_logs_only`. See the [capability contract](../../../CAPABILITIES.md).

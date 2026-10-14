@@ -11,7 +11,8 @@ on:
     paths:
       - 'README.md'
       - 'docker-compose.yml'
-      - '*/*/README.md'
+      - 'tools/**/README.md'
+      - 'tool_setting.ini'
       - 'scripts/generate_docs.py'
       - 'scripts/templates/**'
       - '.github/workflows/deploy-docs.yml'

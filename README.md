@@ -1,6 +1,6 @@
 # Security Hub: local MCP tools behind one gateway
 
-This repository builds one Docker image containing 13 locally maintained MCP
+This repository builds one Docker image containing 14 locally maintained MCP
 servers. The gateway is the only endpoint for an agent. It starts a tool process
 on demand, checks its advertised tool names against a fixed registry, and
 applies deployment-owned target scope before target-facing calls.
@@ -15,7 +15,7 @@ the [capability contract](./CAPABILITIES.md).
 ```bash
 docker compose build
 docker run -i --rm --read-only \
-  --tmpfs /tmp:rw,size=128m --tmpfs /var/lib/security-hub:rw,size=512m \
+  --tmpfs /tmp:rw,size=128m --tmpfs /var/lib/security-hub:rw,size=512m,uid=1000,gid=1000,mode=0700 \
   --cap-drop=ALL --security-opt=no-new-privileges \
   -e AGW_ALLOWED_TARGETS=example.com,10.10.0.0/16 \
   security-hub-agw:latest
@@ -28,6 +28,16 @@ explicit `AGW_ALLOWED_TARGETS` list. Wildcard scope is rejected. Nmap and
 Masscan additionally require `AGW_RAW_NETWORK_ENABLED=true` and a deployment
 that supplies only the `NET_RAW` capability.
 
+ZAP is bundled locally and starts only when its MCP is called. Its login tool
+requires a reviewed profile mounted read-only at `/opt/security-hub/zap_profiles.json`;
+the [default profile file](./zap_profiles.json) is empty. See the
+[ZAP adapter guide](./tools/web-security/zap-mcp/README.md). WhatWeb remains
+available independently.
+For a configured login, add
+`-v /absolute/path/zap_profiles.json:/opt/security-hub/zap_profiles.json:ro`
+to the `docker run` command. The profile contains endpoint and test-account
+metadata; the password is supplied to the bounded `zap_login` call.
+
 ## Tool switches
 
 The complete local component and tool registry is in
@@ -39,7 +49,7 @@ mount a reviewed copy read-only at `/opt/security-hub/tool_setting.ini`.
 
 ```bash
 docker run -i --rm --read-only \
-  --tmpfs /tmp:rw,size=128m --tmpfs /var/lib/security-hub:rw,size=512m \
+  --tmpfs /tmp:rw,size=128m --tmpfs /var/lib/security-hub:rw,size=512m,uid=1000,gid=1000,mode=0700 \
   --cap-drop=ALL --security-opt=no-new-privileges \
   -v /absolute/path/tool_setting.ini:/opt/security-hub/tool_setting.ini:ro \
   -e AGW_ALLOWED_TARGETS=example.com security-hub-agw:latest
@@ -51,8 +61,8 @@ or malformed settings are rejected.
 
 ## Available MCP servers
 
-These 13 servers are implemented in this repository and packaged in the one
-gateway image. The 47 tool bindings below are the reviewed gateway surface;
+These 14 servers are implemented in this repository and packaged in the one
+gateway image. The 50 tool bindings below are the reviewed gateway surface;
 individual switches can reduce the active set.
 
 ### Reconnaissance (5 servers)
@@ -65,7 +75,7 @@ individual switches can reduce the active set.
 | [masscan-mcp](./tools/reconnaissance/masscan-mcp) | 4 | Bounded custom-port or top-port scanning and result access |
 | [externalattacker-mcp](./tools/reconnaissance/externalattacker-mcp) | 5 | Bounded external attack-surface observation |
 
-### Web Security (4 servers)
+### Web Security (5 servers)
 
 | Server | Tools | Description |
 |---|---:|---|
@@ -73,6 +83,7 @@ individual switches can reduce the active set.
 | [nikto-observer-mcp](./tools/web-security/nikto-observer-mcp) | 2 | Fixed Nikto observation checks and result access |
 | [ffuf-mcp](./tools/web-security/ffuf-mcp) | 6 | Bounded GET discovery with fixed wordlists |
 | [waybackurls-mcp](./tools/web-security/waybackurls-mcp) | 3 | Historical URL retrieval and result access |
+| [zap-mcp](./tools/web-security/zap-mcp) | 3 | Configured form login and bounded ZAP passive observation |
 
 ### Secrets Detection (1 server)
 

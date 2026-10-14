@@ -106,6 +106,7 @@ TARGET_FIELDS: dict[str, tuple[str, ...]] = {
     "externalattacker": ("domain", "host"),
     "masscan": ("targets",),
     "nikto": ("target",),
+    "zap": ("target",),
 }
 
 # These reviewed tools only read local process state and have no target input.

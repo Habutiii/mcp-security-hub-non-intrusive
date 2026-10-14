@@ -58,6 +58,13 @@ jobs:
         id: build-image
         run: docker build --pull --tag "$IMAGE" .
 
+      - name: Start bundled ZAP and check its loopback API
+        run: |
+          timeout 120s docker run --rm --read-only \
+            --tmpfs /tmp:rw,size=128m --tmpfs /var/lib/security-hub:rw,size=512m,uid=1000,gid=1000,mode=0700 \
+            --cap-drop=ALL --security-opt=no-new-privileges \
+            --entrypoint python "$IMAGE" /opt/security-hub/tools/zap/smoke.py
+
       - name: Scan image for high and critical vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:

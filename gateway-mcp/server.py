@@ -59,6 +59,7 @@ COMPONENTS: dict[str, Component] = {
     "masscan": Component(CAPABILITY_BY_COMPONENT["masscan"], "/opt/security-hub/tools/masscan", (("MASSCAN_OUTPUT_DIR", "/var/lib/security-hub/masscan"),)),
     "sqlmap": Component(CAPABILITY_BY_COMPONENT["sqlmap"], "/opt/security-hub/tools/sqlmap", (("SQLMAP_OUTPUT_DIR", "/var/lib/security-hub/sqlmap"),)),
     "nikto": Component(CAPABILITY_BY_COMPONENT["nikto"], "/opt/security-hub/tools/nikto", memory_bytes=1_610_612_736),
+    "zap": Component(CAPABILITY_BY_COMPONENT["zap"], "/opt/security-hub/tools/zap", memory_bytes=17_179_869_184),
 }
 SETTINGS = load_tool_settings()
 ENABLED_COMPONENTS = {

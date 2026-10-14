@@ -22,7 +22,7 @@ ARG DHARMA_REV=6b1e5119646064a80122ca18944a98238d5eadb1
 ARG NIKTO_REV=312645d873478a77986627ab1fc8cffe595e85d4
 ARG SECLISTS_REV=49c3b2d1d2481572bd7b0cb5af875a73cdf9d08e
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl git hashcat libnet-ssleay-perl libxml-writer-perl masscan nmap perl ruby-addressable ruby-full tini \
+      ca-certificates curl git hashcat libnet-ssleay-perl libxml-writer-perl masscan nmap openjdk-21-jre-headless perl ruby-addressable ruby-full tini \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=go-builder /go/bin/ /usr/local/bin/
@@ -46,6 +46,14 @@ RUN arch="$(dpkg --print-architecture)" && \
     rm -rf /opt/whatweb/.git /opt/nikto/.git && \
     ln -s /opt/whatweb/whatweb /usr/local/bin/whatweb && \
     ln -s /opt/nikto/program/nikto.pl /usr/local/bin/nikto
+
+# Pinned upstream scanner binary; the MCP interface and all argument policy
+# remain local to this repository. ZAP does not download add-ons at runtime.
+RUN curl -fsSL "https://github.com/zaproxy/zaproxy/releases/download/v2.17.0/ZAP_2.17.0_Linux.tar.gz" -o /tmp/zap.tar.gz && \
+    echo "efe799aaa3627db683b43f00c9c210aea0b75c00cc8f0a0f0434d12bb3ddde5a  /tmp/zap.tar.gz" | sha256sum -c - && \
+    tar -xzf /tmp/zap.tar.gz -C /opt && \
+    mv /opt/ZAP_2.17.0 /opt/zap && \
+    rm /tmp/zap.tar.gz
 
 WORKDIR /opt/security-hub
 COPY gateway-mcp/requirements.txt /tmp/gateway-requirements.txt
@@ -76,6 +84,7 @@ RUN pip install --no-cache-dir -r /tmp/gateway-requirements.txt -r /tmp/boofuzz-
 
 COPY gateway-mcp/ ./gateway-mcp/
 COPY tool_setting.ini ./tool_setting.ini
+COPY zap_profiles.json ./zap_profiles.json
 COPY adapters/ ./adapters/
 COPY tools/fuzzing/dharma-mcp/ ./tools/dharma/
 COPY tools/fuzzing/boofuzz-mcp/ ./tools/boofuzz/
@@ -90,14 +99,15 @@ COPY tools/reconnaissance/externalattacker-mcp/ ./tools/externalattacker/
 COPY tools/reconnaissance/masscan-mcp/ ./tools/masscan/
 COPY tools/web-security/sqlmap-mcp/ ./tools/sqlmap/
 COPY tools/web-security/nikto-observer-mcp/ ./tools/nikto/
+COPY tools/web-security/zap-mcp/ ./tools/zap/
 
 # Code, pinned scanner assets, wordlists, and grammar files are root-owned and
 # read-only to every tool process. Only the dedicated runtime directory is
 # writable by the unprivileged MCP account.
 RUN useradd --create-home --uid 1000 mcpuser && \
     mkdir -p /var/lib/security-hub && \
-    chown -R root:root /opt/security-hub /app && \
-    chmod -R a-w /opt/security-hub /app && \
+    chown -R root:root /opt/security-hub /opt/zap /app && \
+    chmod -R a-w /opt/security-hub /opt/zap /app && \
     chown -R mcpuser:mcpuser /var/lib/security-hub
 USER mcpuser
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/opt/security-hub

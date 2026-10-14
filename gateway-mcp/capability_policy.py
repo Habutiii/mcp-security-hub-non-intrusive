@@ -128,6 +128,11 @@ CAPABILITIES: tuple[Capability, ...] = (
         TargetEffect.AUDIT_LOGS_ONLY, "Fixed read-only Nikto observation checks.",
         frozenset({"nikto_observe", "nikto_get_result"}), True,
     ),
+    Capability(
+        "zap", "local", CapabilityType.BOUNDED_OBSERVATION,
+        TargetEffect.AUDIT_LOGS_ONLY, "Configured form login and bounded ZAP passive observation.",
+        frozenset({"zap_observe", "zap_login", "zap_passive_alerts"}), True,
+    ),
 )
 
 CAPABILITY_BY_COMPONENT = {capability.component_id: capability for capability in CAPABILITIES}

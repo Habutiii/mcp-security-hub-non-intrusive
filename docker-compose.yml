@@ -15,7 +15,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp:size=128M
-      - /var/lib/security-hub:size=512M
+      - /var/lib/security-hub:size=512M,uid=1000,gid=1000,mode=0700
     environment:
       AGW_ALLOWED_TARGETS: ${AGW_ALLOWED_TARGETS:?set explicit authorized domains/CIDRs}
       # Zero keeps initialized tool MCP processes for the whole AGW session.

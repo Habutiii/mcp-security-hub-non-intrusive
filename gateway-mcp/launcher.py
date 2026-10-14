@@ -28,7 +28,7 @@ def main() -> None:
     _, component_id, working_directory, memory_bytes, cpu_seconds, file_bytes = sys.argv
     if component_id not in {
         "dharma", "boofuzz", "hashcat", "gitleaks", "waybackurls", "nmap",
-        "whatweb", "ffuf", "pd_tools", "externalattacker", "masscan", "sqlmap", "nikto",
+        "whatweb", "ffuf", "pd_tools", "externalattacker", "masscan", "sqlmap", "nikto", "zap",
     }:
         raise SystemExit("unregistered component")
     resource.setrlimit(resource.RLIMIT_AS, (int(memory_bytes), int(memory_bytes)))

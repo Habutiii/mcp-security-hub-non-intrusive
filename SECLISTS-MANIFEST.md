@@ -10,7 +10,7 @@ Only these files are copied into the immutable image:
 
 - `Passwords/Common-Credentials/10k-most-common.txt` — Hashcat's only allowed dictionary.
 - `Discovery/Web-Content/common.txt` — FFUF `common` and `dirb-common`.
-- `Discovery/Web-Content/directory-list-2.3-medium.txt` — FFUF `dirbuster-medium`.
+- `Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt` — FFUF `dirbuster-medium`.
 - `Discovery/Web-Content/raft-large-directories.txt` — FFUF `raft-large-dirs`.
 - `Discovery/Web-Content/raft-large-files.txt` — FFUF `raft-large-files`.
 - `Discovery/DNS/subdomains-top1million-5000.txt` — FFUF `subdomains-top1mil`.

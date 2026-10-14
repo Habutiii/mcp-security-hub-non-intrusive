@@ -7,6 +7,7 @@ A Model Context Protocol server for network protocol fuzzing using Boofuzz.
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -71,16 +72,21 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
 
     elif name == "boofuzz_get_results":
         session_id = arguments.get("session_id")
-        result_path = Path(settings.results_dir) / session_id
-        
-        if not result_path.exists():
+        if not isinstance(session_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", session_id):
+            return [TextContent(type="text", text="Invalid session ID.")]
+        results_root = Path(settings.results_dir).resolve()
+        result_path = (results_root / session_id).resolve()
+        if not result_path.is_relative_to(results_root) or not result_path.is_dir():
             return [TextContent(type="text", text=f"Session {session_id} not found.")]
 
         results = {"session_id": session_id, "files": {}}
         for f in result_path.glob("*"):
             try:
-                results["files"][f.name] = f.read_text()[:5000] # Limit size
-            except: pass
+                if f.is_file() and f.resolve().is_relative_to(result_path):
+                    with f.open("rb") as stream:
+                        results["files"][f.name] = stream.read(5000).decode("utf-8", errors="replace")
+            except OSError:
+                continue
         
         return [TextContent(type="text", text=json.dumps(results, indent=2))]
 

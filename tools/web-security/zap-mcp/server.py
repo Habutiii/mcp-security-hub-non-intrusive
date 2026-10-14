@@ -158,18 +158,22 @@ async def ensure_zap() -> None:
         API_KEY = secrets.token_hex(32)
         env = os.environ.copy()
         env["JAVA_TOOL_OPTIONS"] = "-Xmx512m"
-        PROCESS = await asyncio.create_subprocess_exec(
-            "/opt/zap/zap.sh", "-daemon", "-host", "127.0.0.1", "-port", str(API_PORT),
-            "-dir", str(ZAP_HOME), "-config", f"api.key={API_KEY}",
-            "-config", "api.addrs.addr.name=127.0.0.1",
-            "-config", "api.addrs.addr.regex=false",
-            "-config", "api.disablekey=false",
-            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
-            env=env, start_new_session=True,
-        )
+        stderr_path = ZAP_HOME / "startup.stderr"
+        with stderr_path.open("wb") as stderr_file:
+            PROCESS = await asyncio.create_subprocess_exec(
+                "/opt/zap/zap.sh", "-daemon", "-host", "127.0.0.1", "-port", str(API_PORT),
+                "-dir", str(ZAP_HOME), "-config", f"api.key={API_KEY}",
+                "-config", "api.addrs.addr.name=127.0.0.1",
+                "-config", "api.addrs.addr.regex=false",
+                "-config", "api.disablekey=false",
+                stdout=asyncio.subprocess.DEVNULL, stderr=stderr_file,
+                env=env, start_new_session=True,
+            )
         for _ in range(120):
             if PROCESS.returncode is not None:
-                raise RuntimeError("local ZAP process exited during startup")
+                detail = stderr_path.read_text(encoding="utf-8", errors="replace")[-3000:]
+                detail = detail.replace(API_KEY, "[redacted]")
+                raise RuntimeError(f"local ZAP process exited during startup: {detail}")
             try:
                 await asyncio.to_thread(_api, "/JSON/core/view/version/")
                 PROXY_CERT = await asyncio.to_thread(_api, "/OTHER/core/other/rootcert/")
